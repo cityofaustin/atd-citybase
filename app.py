@@ -95,7 +95,7 @@ def handle_postback():
         headers=headers["prod"],
         data=knack_payload,
     )
-    if r.status_code is 200:
+    if r.status_code == 200:
         return "status updated", r.status_code
     # if unsuccessful, return knack's status response as response
     return r.text, r.status_code
@@ -118,7 +118,7 @@ def handle_postback_uat():
         headers=headers["uat"],
         data=knack_payload,
     )
-    if r.status_code is 200:
+    if r.status_code == 200:
         return "status updated", r.status_code
     # if unsuccessful, return knack's status response as response
     return r.text, r.status_code
