@@ -1,5 +1,9 @@
 # atd-citybase
 
+## Description
+
+Flask based endpoint used to transform events delivered by Citybase to the Knack platform and back again. 
+
 ## Development
 
 In the root of the git repository, please:
