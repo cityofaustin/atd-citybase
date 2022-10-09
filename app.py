@@ -75,7 +75,7 @@ def get_knack_record_id(citybase_data):
 @app.route("/")
 def index():
     now = datetime.now().isoformat()
-    return f"ATD Citybase healthcheck {now}"
+    return f"👋 ATD Citybase healthcheck {now}"
 
 
 @app.route("/citybase_postback", methods=["POST"])
