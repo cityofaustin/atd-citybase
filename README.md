@@ -2,7 +2,7 @@
 
 ## Development
 
-In the `/root` directory, please:
+In the root of the git repository, please:
 * `docker-compose build` will build the task environment
 * Edit `environment_variables.env` to contain the desired environment variables. See `environment_variables.env_template` for a template
 * `docker-compose up -d` should start the app
