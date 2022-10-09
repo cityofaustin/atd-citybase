@@ -126,4 +126,4 @@ def handle_postback_uat():
 
 if __name__ == "__main__":
     # todo: remember to turn off debug!
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0')
