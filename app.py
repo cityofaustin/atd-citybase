@@ -143,7 +143,7 @@ def handle_postback():
     if not isinstance(knack_invoice, str):
         return knack_invoice
     payment_status = citybase_data["data"]["status"]
-    payment_amount = citybase_data["total_amount"]
+    payment_amount = citybase_data["data"]["total_amount"]
     # get json payload for knack
     knack_payload = get_knack_payload(
         "prod", payment_status, payment_amount, knack_invoice
@@ -180,7 +180,7 @@ def handle_postback_uat():
     if not isinstance(knack_invoice, str):
         return knack_invoice
     payment_status = citybase_data["data"]["status"]
-    payment_amount = citybase_data["total_amount"]
+    payment_amount = citybase_data["data"]["total_amount"]
     # get json payload for knack
     knack_payload = get_knack_payload(
         "uat", payment_status, payment_amount, knack_invoice
