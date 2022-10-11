@@ -15,9 +15,15 @@ KNACK_API_KEY = os.getenv("KNACK_API_KEY")
 
 # map knack field ids to human rememberable names
 field_maps = {
-    "total_amount_uat": "field_3338",
-    "payment_status_uat": "field_3352"
-    # "payment_status: todo: get field for prod
+    "uat": {
+        "total_amount": "field_3338",
+        "payment_status": "field_3352",
+        "invoice_id": "field_3333",
+    },
+    "prod": {  # todo update with prod info
+        "total_amount": "field_3338",
+        "payment_status": "field_3352",
+    },
 }
 
 # map citybase payment statuses to knack options
@@ -45,15 +51,16 @@ headers = {
 app = Flask(__name__)
 
 
-def get_record_id(custom_attributes):
+def get_custom_attribute(custom_attributes, attribute_name):
     """
     :param custom_attributes: list of objects {key, object} from citybase
+    :param attribute_name: string, which attribute we are fetching
     :return: knack record id string or False if not found
     """
     if len(custom_attributes) < 1:
         return False
     for attribute in custom_attributes:
-        if attribute["key"] == "knack_record_id":
+        if attribute["key"] == attribute_name:
             return attribute["value"]
     return False
 
@@ -64,7 +71,9 @@ def get_knack_record_id(citybase_data):
     :return: str, knack record id or tuple(text, resp code), if error
     """
     try:
-        knack_record_id = get_record_id(citybase_data["data"]["custom_attributes"])
+        knack_record_id = get_custom_attribute(
+            citybase_data["data"]["custom_attributes"], "knack_record_id"
+        )
     except KeyError:
         return "Missing custom attributes", 400
     if not knack_record_id:
@@ -72,10 +81,54 @@ def get_knack_record_id(citybase_data):
     return knack_record_id
 
 
+def get_knack_invoice(citybase_data):
+    """
+    :param citybase_data: json from POST request
+    :return: str, knack record id or tuple(text, resp code), if error
+    """
+    try:
+        knack_invoice = get_custom_attribute(
+            citybase_data["data"]["custom_attributes"], "invoice_number"
+        )
+    except KeyError:
+        return "Missing custom attributes", 400
+    if not knack_invoice:
+        return "Missing knack invoice number custom attribute", 400
+    return knack_invoice
+
+
+def get_knack_payload(environment, payment_status, payment_amount, knack_invoice):
+    """
+    :param environment: "uat" or "prod" depending on which endpoint calls this function
+    :param payment_status: info from citybase payload
+    :param payment_amount: number from citybase payload
+    :param knack_invoice: info from citybase payload
+    :return: json object to send along with PUT or POST
+    """
+    if payment_status == "refunded":
+        return json.dumps(
+            {
+                field_maps[environment]["payment_status"]: payment_status_map[
+                    payment_status
+                ],
+                field_maps[environment]["invoice_id"]: knack_invoice,
+                field_maps[environment]["total_amount"]: payment_amount,
+            }
+        )
+    else:
+        return json.dumps(
+            {
+                field_maps[environment]["payment_status"]: payment_status_map[
+                    payment_status
+                ],
+            }
+        )
+
+
 @app.route("/")
 def index():
     now = datetime.now().isoformat()
-    return f"👋 ATD Citybase healthcheck {now}"
+    return f"Austin Transportation Department Citybase healthcheck {now}"
 
 
 @app.route("/citybase_postback", methods=["POST"])
@@ -85,20 +138,34 @@ def handle_postback():
     # if knack_record_id is not a string, then it is an error tuple
     if not isinstance(knack_record_id, str):
         return knack_record_id
+    knack_invoice = get_knack_invoice(citybase_data)
+    # if knack_record_id is not a string, then it is an error tuple
+    if not isinstance(knack_invoice, str):
+        return knack_invoice
     payment_status = citybase_data["data"]["status"]
-    knack_payload = json.dumps(
-        {field_maps["payment_status"]: payment_status_map[payment_status]}
+    payment_amount = citybase_data["total_amount"]
+    # get json payload for knack
+    knack_payload = get_knack_payload(
+        "prod", payment_status, payment_amount, knack_invoice
     )
-    # send payment status to knack
-    r = requests.put(
-        f"{KNACK_API_URL}{OBJECT_ID}/records/{knack_record_id}",
-        headers=headers["prod"],
-        data=knack_payload,
-    )
-    if r.status_code == 200:
-        return "status updated", r.status_code
+    # if a refund, post a new record to knack transactions table
+    if payment_status == "refunded":
+        knack_response = requests.post(
+            f"{KNACK_API_URL}{OBJECT_ID}/records/",
+            headers=headers["prod"],
+            data=knack_payload,
+        )
+    # otherwise, update existing record payment status
+    else:
+        knack_response = requests.put(
+            f"{KNACK_API_URL}{OBJECT_ID}/records/{knack_record_id}",
+            headers=headers["prod"],
+            data=knack_payload,
+        )
+    if knack_response.status_code == 200:
+        return "status updated", knack_response.status_code
     # if unsuccessful, return knack's status response as response
-    return r.text, r.status_code
+    return knack_response.text, knack_response.status_code
 
 
 @app.route("/citybase_postback_uat", methods=["POST"])
@@ -108,22 +175,36 @@ def handle_postback_uat():
     # if knack_record_id is not a string, then it is an error tuple
     if not isinstance(knack_record_id, str):
         return knack_record_id
+    knack_invoice = get_knack_invoice(citybase_data)
+    # if knack_record_id is not a string, then it is an error tuple
+    if not isinstance(knack_invoice, str):
+        return knack_invoice
     payment_status = citybase_data["data"]["status"]
-    knack_payload = json.dumps(
-        {field_maps["payment_status_uat"]: payment_status_map[payment_status]}
+    payment_amount = citybase_data["total_amount"]
+    # get json payload for knack
+    knack_payload = get_knack_payload(
+        "uat", payment_status, payment_amount, knack_invoice
     )
-    # send payment status to knack
-    r = requests.put(
-        f"{KNACK_API_URL}{OBJECT_ID_UAT}/records/{knack_record_id}",
-        headers=headers["uat"],
-        data=knack_payload,
-    )
-    if r.status_code == 200:
-        return "status updated", r.status_code
+    # if a refund, post a new record to knack transactions table
+    if payment_status == "refunded":
+        knack_response = requests.post(
+            f"{KNACK_API_URL}{OBJECT_ID}/records/",
+            headers=headers["uat"],
+            data=knack_payload,
+        )
+    # otherwise, update existing record payment status
+    else:
+        knack_response = requests.put(
+            f"{KNACK_API_URL}{OBJECT_ID}/records/{knack_record_id}",
+            headers=headers["uat"],
+            data=knack_payload,
+        )
+    if knack_response.status_code == 200:
+        return "status updated", knack_response.status_code
     # if unsuccessful, return knack's status response as response
-    return r.text, r.status_code
+    return knack_response.text, knack_response.status_code
 
 
 if __name__ == "__main__":
     # todo: remember to turn off debug!
-    app.run(debug=True, host='0.0.0.0')
+    app.run(debug=True, host="0.0.0.0")
