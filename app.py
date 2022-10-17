@@ -163,7 +163,7 @@ def handle_postback():
             data=knack_payload,
         )
     if knack_response.status_code == 200:
-        return "status updated", knack_response.status_code
+        return "Payment status updated", knack_response.status_code
     # if unsuccessful, return knack's status response as response
     return knack_response.text, knack_response.status_code
 
@@ -200,7 +200,7 @@ def handle_postback_uat():
             data=knack_payload,
         )
     if knack_response.status_code == 200:
-        return "status updated", knack_response.status_code
+        return "Payment status updated", knack_response.status_code
     # if unsuccessful, return knack's status response as response
     return knack_response.text, knack_response.status_code
 
