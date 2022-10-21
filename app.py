@@ -1,5 +1,6 @@
 from datetime import datetime
 from flask import Flask, request
+from datetime import date
 import requests
 import json
 import os
@@ -19,6 +20,8 @@ field_maps = {
         "total_amount": "field_3338",
         "payment_status": "field_3352",
         "invoice_id": "field_3333",
+        "created_date": "field_3320",
+        "transaction_paid_date": "field_3366"
     },
     "prod": {  # todo update with prod info
         "total_amount": "field_3338",
@@ -101,10 +104,11 @@ def get_knack_payload(environment, payment_status, payment_amount, knack_invoice
     """
     :param environment: "uat" or "prod" depending on which endpoint calls this function
     :param payment_status: info from citybase payload
-    :param payment_amount: number from citybase payload
+    :param payment_amount: string amount from citybase payload
     :param knack_invoice: info from citybase payload
     :return: json object to send along with PUT or POST
     """
+    today_date =  date.today().strftime("%m/%d/%Y")
     if payment_status == "refunded":
         return json.dumps(
             {
@@ -112,7 +116,9 @@ def get_knack_payload(environment, payment_status, payment_amount, knack_invoice
                     payment_status
                 ],
                 field_maps[environment]["invoice_id"]: knack_invoice,
-                field_maps[environment]["total_amount"]: payment_amount,
+                # if it is a refund, we should store it as negative, so as not to inflate our total
+                field_maps[environment]["total_amount"]: f"-{payment_amount}",
+                field_maps[environment]["created_date"]: today_date,
             }
         )
     else:
@@ -121,6 +127,7 @@ def get_knack_payload(environment, payment_status, payment_amount, knack_invoice
                 field_maps[environment]["payment_status"]: payment_status_map[
                     payment_status
                 ],
+                field_maps[environment]["transaction_paid_date"]: today_date,
             }
         )
 
