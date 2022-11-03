@@ -27,6 +27,7 @@ field_maps = {
         "messages_invoice_id": "field_3365",
         "messages_created_date": "field_3369",
         "messages_status": "field_3367",
+        "messages_citybase_id": "field_3378"
     },
     "prod": {  # todo update with prod info
         "total_amount": "field_3338",
@@ -155,6 +156,7 @@ def create_message_json(
             field_maps[environment]["messages_invoice_id"]: knack_invoice,
             field_maps[environment]["messages_created_date"]: today_date,
             field_maps[environment]["messages_status"]: payment_status,
+            field_maps[environment]["messages_citybase_id"]: citybase_id,
         }
     )
 
