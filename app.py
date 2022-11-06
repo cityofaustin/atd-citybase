@@ -10,7 +10,9 @@ TRANSACTIONS_OBJECT_ID_UAT = "object_180"
 MESSAGES_OBJECT_ID_UAT = "object_181"
 KNACK_APP_ID_UAT = os.getenv("KNACK_APP_ID_UAT")
 KNACK_API_KEY_UAT = os.getenv("KNACK_API_KEY_UAT")
-# todo: get prod object id
+OTS_OBJECT_ID_UAT = "object_164"
+LPB_OBJECT_ID_UAT = "object_161"
+# todo: update prod object ids
 TRANSACTIONS_OBJECT_ID = "object_180"
 MESSAGES_OBJECT_ID = "object_181"
 KNACK_APP_ID = os.getenv("KNACK_APP_ID")
@@ -27,7 +29,15 @@ field_maps = {
         "messages_invoice_id": "field_3365",
         "messages_created_date": "field_3369",
         "messages_status": "field_3367",
-        "messages_citybase_id": "field_3378"
+        "messages_citybase_id": "field_3378",
+        "ots_connection_field": "field_3327",
+        "ots_application_status": "",
+        "ots_paid_status": "",
+        "ots_payment_date": "",
+        "lpb_connection_field": "field_3326",
+        "lpb_application_status":"field_2796", # in banner_reservations object
+        "lpb_paid_status": "field_2808", # in banner_reservations object
+        "lpb_payment_date": "field_2809", # in banner_reservations object
     },
     "prod": {  # todo update with prod info
         "total_amount": "field_3338",
@@ -161,6 +171,49 @@ def create_message_json(
     )
 
 
+def update_parent_reservation(environment, knack_record_id, today_date):
+    record_response = requests.get(
+            f"{KNACK_API_URL}{TRANSACTIONS_OBJECT_ID}/records/{knack_record_id}",
+            headers=headers[environment],
+        )
+    record_data = record_response.json()
+    if record_data[field_maps[environment]["ots_connection_field"]]:
+        # get parent record id
+        parent_record_response = record_data[field_maps[environment]["ots_connection_field"]+"_raw"]
+        parent_record_id = parent_record_response[0]["id"]
+        ots_payload = json.dumps(
+            {
+                field_maps[environment]["ots_application_status"]: "Approved",
+                field_maps[environment]["ots_paid_status"]: True,
+                field_maps[environment]["ots_payment_date"]: today_date,
+            }
+        )
+        parent_update_response = requests.put(
+            f"{KNACK_API_URL}{OTS_OBJECT_ID_UAT}/records/{parent_record_id}",
+            headers=headers["uat"],
+            data=ots_payload,
+        )
+        print(parent_update_response)
+    if record_data[field_maps[environment]["lpb_connection_field"]]:
+        # get parent record id
+        parent_record_response = record_data[field_maps[environment]["lpb_connection_field"]+"_raw"]
+        parent_record_id = parent_record_response[0]["id"]
+        lpb_payload = json.dumps(
+            {
+                field_maps[environment]["lpb_application_status"]: "Approved",
+                field_maps[environment]["lpb_paid_status"]: True,
+                field_maps[environment]["lpb_payment_date"]: today_date,
+            }
+        )
+        parent_update_response = requests.put(
+            f"{KNACK_API_URL}{LPB_OBJECT_ID_UAT}/records/{parent_record_id}",
+            headers=headers["uat"],
+            data=lpb_payload,
+        )
+        print(parent_update_response)
+
+
+
 @app.route("/")
 def index():
     now = datetime.now().isoformat()
@@ -246,6 +299,9 @@ def handle_postback_uat():
         )
     # otherwise, update existing record payment status
     else:
+        if payment_status == "successful":
+            # if this was a successful payment we need to update reservation record
+            update_parent_reservation("uat", knack_record_id, today_date)
         knack_response = requests.put(
             f"{KNACK_API_URL}{TRANSACTIONS_OBJECT_ID_UAT}/records/{knack_record_id}",
             headers=headers["uat"],
