@@ -31,13 +31,13 @@ field_maps = {
         "messages_status": "field_3367",
         "messages_citybase_id": "field_3378",
         "ots_connection_field": "field_3327",
-        "ots_application_status": "",
-        "ots_paid_status": "",
-        "ots_payment_date": "",
+        "ots_application_status": "field_2862",  # in banner_reservations object
+        "ots_paid_status": "field_2858",  # in banner_reservations object
+        "ots_payment_date": "field_3144",  # in banner_reservations object
         "lpb_connection_field": "field_3326",
-        "lpb_application_status":"field_2796", # in banner_reservations object
-        "lpb_paid_status": "field_2808", # in banner_reservations object
-        "lpb_payment_date": "field_2809", # in banner_reservations object
+        "lpb_application_status":"field_2796",  # in banner_reservations object
+        "lpb_paid_status": "field_2808",  # in banner_reservations object
+        "lpb_payment_date": "field_2809",  # in banner_reservations object
     },
     "prod": {  # todo update with prod info
         "total_amount": "field_3338",
