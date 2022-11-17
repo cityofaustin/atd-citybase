@@ -231,7 +231,6 @@ def update_parent_reservation(environment, knack_record_id, today_date):
         print(parent_update_response)
 
 
-
 @app.route("/")
 def index():
     now = datetime.now().isoformat()
@@ -242,20 +241,35 @@ def index():
 def handle_postback():
     today_date = date.today().strftime("%m/%d/%Y")
     citybase_data = request.get_json()
+
     knack_record_id = get_knack_record_id(citybase_data)
     # if knack_record_id is not a string, then it is an error tuple
     if not isinstance(knack_record_id, str):
         return knack_record_id
+
     knack_invoice = get_knack_invoice(citybase_data)
     # if knack_record_id is not a string, then it is an error tuple
     if not isinstance(knack_invoice, str):
         return knack_invoice
+
     payment_status = citybase_data["data"]["status"]
     payment_amount = citybase_data["data"]["total_amount"]
+    citybase_id = citybase_data["data"]["id"]
+
+    message_payload = create_message_json(
+        "prod", citybase_id, today_date, knack_invoice, payment_status
+    )
+    requests.post(
+        f"{KNACK_API_URL}{MESSAGES_OBJECT_ID}/records/",
+        headers=headers["prod"],
+        data=message_payload,
+    )
+
     # get json payload for knack
     knack_payload = get_knack_payload(
-        "prod", payment_status, payment_amount, knack_invoice
+        "prod", payment_status, payment_amount, knack_invoice, today_date
     )
+
     # if a refund, post a new record to knack transactions table
     if payment_status == "refunded":
         knack_response = requests.post(
@@ -265,6 +279,9 @@ def handle_postback():
         )
     # otherwise, update existing record payment status
     else:
+        if payment_status == "successful":
+            # if this was a successful payment we need to update reservation record
+            update_parent_reservation("prod", knack_record_id, today_date)
         knack_response = requests.put(
             f"{KNACK_API_URL}{TRANSACTIONS_OBJECT_ID}/records/{knack_record_id}",
             headers=headers["prod"],
