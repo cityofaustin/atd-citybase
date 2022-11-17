@@ -6,17 +6,20 @@ import json
 import os
 
 KNACK_API_URL = "https://api.knack.com/v1/objects/"
-TRANSACTIONS_OBJECT_ID_UAT = "object_180"
-MESSAGES_OBJECT_ID_UAT = "object_181"
+# uat objects
 KNACK_APP_ID_UAT = os.getenv("KNACK_APP_ID_UAT")
 KNACK_API_KEY_UAT = os.getenv("KNACK_API_KEY_UAT")
+TRANSACTIONS_OBJECT_ID_UAT = "object_180"
+MESSAGES_OBJECT_ID_UAT = "object_181"
 OTS_OBJECT_ID_UAT = "object_164"
 LPB_OBJECT_ID_UAT = "object_161"
-# todo: update prod object ids
-TRANSACTIONS_OBJECT_ID = "object_180"
-MESSAGES_OBJECT_ID = "object_181"
+# prod objects
 KNACK_APP_ID = os.getenv("KNACK_APP_ID")
 KNACK_API_KEY = os.getenv("KNACK_API_KEY")
+TRANSACTIONS_OBJECT_ID = "object_180"
+MESSAGES_OBJECT_ID = "object_181"
+OTS_OBJECT_ID = "object_164"
+LPB_OBJECT_ID = "object_161"
 
 # map knack field ids to human rememberable names
 field_maps = {
@@ -39,9 +42,24 @@ field_maps = {
         "lpb_paid_status": "field_2808",  # in banner_reservations object
         "lpb_payment_date": "field_2809",  # in banner_reservations object
     },
-    "prod": {  # todo update with prod info
-        "total_amount": "field_3338",
-        "payment_status": "field_3352",
+    "prod": {
+        "total_amount": "field_3342",
+        "payment_status": "field_3353",
+        "invoice_id": "field_3327",
+        "created_date": "field_3320",
+        "transaction_paid_date": "field_3352",
+        "messages_invoice_id": "field_3363",
+        "messages_created_date": "field_3366",
+        "messages_status": "field_3361",
+        "messages_citybase_id": "field_3368",
+        "ots_connection_field": "field_3329",
+        "ots_application_status": "field_2862",  # in banner_reservations object
+        "ots_paid_status": "field_2858",  # in banner_reservations object
+        "ots_payment_date": "field_3144",  # in banner_reservations object
+        "lpb_connection_field": "field_3328",
+        "lpb_application_status": "field_2796",  # in banner_reservations object
+        "lpb_paid_status": "field_2808",  # in banner_reservations object
+        "lpb_payment_date": "field_2809",  # in banner_reservations object
     },
 }
 
