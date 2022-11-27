@@ -1,6 +1,5 @@
 from datetime import datetime
 from flask import Flask, request
-from datetime import date
 import requests
 import json
 import os
@@ -30,6 +29,7 @@ field_maps = {
         "created_date": "field_3320",
         "transaction_paid_date": "field_3366",
         "messages_invoice_id": "field_3365",
+        "messages_connected_invoice": "field_3372",
         "messages_created_date": "field_3369",
         "messages_status": "field_3367",
         "messages_citybase_id": "field_3378",
@@ -49,6 +49,7 @@ field_maps = {
         "created_date": "field_3320",
         "transaction_paid_date": "field_3352",
         "messages_invoice_id": "field_3363",
+        "messages_connected_invoice": "field_3369",
         "messages_created_date": "field_3366",
         "messages_status": "field_3361",
         "messages_citybase_id": "field_3368",
@@ -141,7 +142,7 @@ def get_knack_payload(
     :param payment_status: info from citybase payload
     :param payment_amount: string amount from citybase payload
     :param knack_invoice: info from citybase payload
-    :param today_date: mm/dd/YYYY date string
+    :param today_date: mm/dd/YYYY H:M datetime string
     :return: json object to send along with PUT or POST
     """
     if payment_status == "refunded":
@@ -172,16 +173,17 @@ def create_message_json(
 ):
     """
 
-    :param environment:
-    :param citybase_id:
-    :param today_date:
-    :param knack_invoice:
-    :param payment_status:
+    :param environment: "uat" or "prod" depending on which endpoint calls this function
+    :param citybase_id: citybase transaction id
+    :param today_date: mm/dd/YYYY H:M datetime string
+    :param knack_invoice: info from citybase payload
+    :param payment_status: info from citybase payload
     :return:
     """
     return json.dumps(
         {
             field_maps[environment]["messages_invoice_id"]: knack_invoice,
+            field_maps[environment]["messages_connected_invoice"]: knack_invoice,
             field_maps[environment]["messages_created_date"]: today_date,
             field_maps[environment]["messages_status"]: payment_status,
             field_maps[environment]["messages_citybase_id"]: citybase_id,
@@ -239,7 +241,7 @@ def index():
 
 @app.route("/citybase_postback", methods=["POST"])
 def handle_postback():
-    today_date = date.today().strftime("%m/%d/%Y")
+    today_date = datetime.now().strftime("%m/%d/%Y %H:%M")
     citybase_data = request.get_json()
 
     knack_record_id = get_knack_record_id(citybase_data)
@@ -295,7 +297,7 @@ def handle_postback():
 
 @app.route("/citybase_postback_uat", methods=["POST"])
 def handle_postback_uat():
-    today_date = date.today().strftime("%m/%d/%Y")
+    today_date = datetime.now().strftime("%m/%d/%Y %H:%M")
     citybase_data = request.get_json()
 
     knack_record_id = get_knack_record_id(citybase_data)
