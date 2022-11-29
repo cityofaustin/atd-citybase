@@ -38,7 +38,7 @@ field_maps = {
         "ots_paid_status": "field_2858",  # in banner_reservations object
         "ots_payment_date": "field_3144",  # in banner_reservations object
         "lpb_connection_field": "field_3326",
-        "lpb_application_status":"field_2796",  # in banner_reservations object
+        "lpb_application_status": "field_2796",  # in banner_reservations object
         "lpb_paid_status": "field_2808",  # in banner_reservations object
         "lpb_payment_date": "field_2809",  # in banner_reservations object
     },
@@ -134,9 +134,7 @@ def get_knack_invoice(citybase_data):
     return knack_invoice
 
 
-def get_knack_payload(
-    environment, payment_status, today_date
-):
+def get_knack_payload(environment, payment_status, today_date):
     """
     :param environment: "uat" or "prod" depending on which endpoint calls this function
     :param payment_status: info from citybase payload
@@ -154,7 +152,12 @@ def get_knack_payload(
 
 
 def get_knack_refund_payload(
-    environment, payment_status, payment_amount, knack_invoice, today_date, knack_record_id
+    environment,
+    payment_status,
+    payment_amount,
+    knack_invoice,
+    today_date,
+    knack_record_id,
 ):
     """
     :param environment: "uat" or "prod" depending on which endpoint calls this function
@@ -171,20 +174,21 @@ def get_knack_refund_payload(
             "event_name": "field_3348",
             "type": "field_3337",
             "banner_reservations_lpb": "field_3326",
-            "banner_reservations_ots": "field_3327"
+            "banner_reservations_ots": "field_3327",
         },
         "prod": {
             "customer_name": "field_3334",
             "event_name": "field_3336",
             "type": "field_3333",
             "banner_reservations_lpb": "field_3328",
-            "banner_reservations_ots": "field_3329"
-        }
+            "banner_reservations_ots": "field_3329",
+        },
     }
     record_response = requests.get(
-            f"{KNACK_API_URL}{TRANSACTIONS_OBJECT_ID}/records/{knack_record_id}",
-            headers=headers[environment],
-        )
+        f"{KNACK_API_URL}{TRANSACTIONS_OBJECT_ID}/records/{knack_record_id}",
+        headers=headers[environment],
+    )
+    record_data = record_response.json()
 
     return json.dumps(
         {
@@ -195,11 +199,21 @@ def get_knack_refund_payload(
             # if it is a refund, store negative amount
             field_maps[environment]["total_amount"]: f"-{payment_amount}",
             field_maps[environment]["created_date"]: today_date,
-            refund_fields[environment]["customer_name"]: record_response[refund_fields[environment]["customer_name"]],
-            refund_fields[environment]["event_name"]: record_response[refund_fields[environment]["event_name"]],
-            refund_fields[environment]["type"]: record_response[refund_fields[environment]["type"]],
-            refund_fields[environment]["banner_reservations_lpb"]: record_response[refund_fields[environment]["banner_reservations_lpb"]],
-            refund_fields[environment]["banner_reservations_ots"]: record_response[refund_fields[environment]["banner_reservations_ots"]]
+            refund_fields[environment]["customer_name"]: record_data[
+                refund_fields[environment]["customer_name"]
+            ],
+            refund_fields[environment]["event_name"]: record_data[
+                refund_fields[environment]["event_name"]
+            ],
+            refund_fields[environment]["type"]: record_data[
+                refund_fields[environment]["type"]
+            ],
+            refund_fields[environment]["banner_reservations_lpb"]: record_data[
+                refund_fields[environment]["banner_reservations_lpb"]
+            ],
+            refund_fields[environment]["banner_reservations_ots"]: record_data[
+                refund_fields[environment]["banner_reservations_ots"]
+            ],
         }
     )
 
@@ -229,13 +243,15 @@ def create_message_json(
 
 def update_parent_reservation(environment, knack_record_id, today_date):
     record_response = requests.get(
-            f"{KNACK_API_URL}{TRANSACTIONS_OBJECT_ID}/records/{knack_record_id}",
-            headers=headers[environment],
-        )
+        f"{KNACK_API_URL}{TRANSACTIONS_OBJECT_ID}/records/{knack_record_id}",
+        headers=headers[environment],
+    )
     record_data = record_response.json()
     if record_data[field_maps[environment]["ots_connection_field"]]:
         # get parent record id
-        parent_record_response = record_data[field_maps[environment]["ots_connection_field"]+"_raw"]
+        parent_record_response = record_data[
+            field_maps[environment]["ots_connection_field"] + "_raw"
+        ]
         parent_record_id = parent_record_response[0]["id"]
         ots_payload = json.dumps(
             {
@@ -252,7 +268,9 @@ def update_parent_reservation(environment, knack_record_id, today_date):
         print(parent_update_response)
     if record_data[field_maps[environment]["lpb_connection_field"]]:
         # get parent record id
-        parent_record_response = record_data[field_maps[environment]["lpb_connection_field"]+"_raw"]
+        parent_record_response = record_data[
+            field_maps[environment]["lpb_connection_field"] + "_raw"
+        ]
         parent_record_id = parent_record_response[0]["id"]
         lpb_payload = json.dumps(
             {
@@ -305,7 +323,14 @@ def handle_postback():
 
     # if a refund, post a new record to knack transactions table
     if payment_status == "refunded":
-        knack_payload = get_knack_refund_payload("prod", payment_status, payment_amount, knack_invoice, today_date, knack_record_id)
+        knack_payload = get_knack_refund_payload(
+            "prod",
+            payment_status,
+            payment_amount,
+            knack_invoice,
+            today_date,
+            knack_record_id,
+        )
         knack_response = requests.post(
             f"{KNACK_API_URL}{TRANSACTIONS_OBJECT_ID}/records/",
             headers=headers["prod"],
@@ -358,7 +383,14 @@ def handle_postback_uat():
 
     # if a refund, post a new record to knack transactions table
     if payment_status == "refunded":
-        knack_payload = get_knack_refund_payload("uat", payment_status, payment_amount, knack_invoice, today_date, knack_record_id)
+        knack_payload = get_knack_refund_payload(
+            "uat",
+            payment_status,
+            payment_amount,
+            knack_invoice,
+            today_date,
+            knack_record_id,
+        )
         knack_response = requests.post(
             f"{KNACK_API_URL}{TRANSACTIONS_OBJECT_ID_UAT}/records/",
             headers=headers["uat"],
