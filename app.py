@@ -175,6 +175,7 @@ def get_knack_refund_payload(
             "type": "field_3337",
             "banner_reservations_lpb": "field_3326",
             "banner_reservations_ots": "field_3327",
+            "sub_description": "field_3349"
         },
         "prod": {
             "customer_name": "field_3334",
@@ -182,6 +183,7 @@ def get_knack_refund_payload(
             "type": "field_3333",
             "banner_reservations_lpb": "field_3328",
             "banner_reservations_ots": "field_3329",
+            "sub_description": "field_3351"
         },
     }
     record_response = requests.get(
@@ -189,6 +191,18 @@ def get_knack_refund_payload(
         headers=headers[environment],
     )
     record_data = record_response.json()
+
+    # the connection record id is in the format "field_3326": "<span class=\"638e58b31370e500241c3388\">486</span>",
+    # using the raw form of the field to get the identifier.
+    try:
+        lpb_connection_id = record_data[f'{refund_fields[environment]["banner_reservations_lpb"]}_raw'][0]["identifier"]
+    except IndexError:
+        lpb_connection_id = None
+
+    try:
+        ots_connection_id = record_data[f'{refund_fields[environment]["banner_reservations_ots"]}_raw'][0]["identifier"]
+    except IndexError:
+        ots_connection_id = None
 
     return json.dumps(
         {
@@ -199,6 +213,7 @@ def get_knack_refund_payload(
             # if it is a refund, store negative amount
             field_maps[environment]["total_amount"]: f"-{payment_amount}",
             field_maps[environment]["created_date"]: today_date,
+            field_maps[environment]["transaction_paid_date"]: today_date,
             refund_fields[environment]["customer_name"]: record_data[
                 refund_fields[environment]["customer_name"]
             ],
@@ -208,11 +223,10 @@ def get_knack_refund_payload(
             refund_fields[environment]["type"]: record_data[
                 refund_fields[environment]["type"]
             ],
-            refund_fields[environment]["banner_reservations_lpb"]: record_data[
-                refund_fields[environment]["banner_reservations_lpb"]
-            ],
-            refund_fields[environment]["banner_reservations_ots"]: record_data[
-                refund_fields[environment]["banner_reservations_ots"]
+            refund_fields[environment]["banner_reservations_lpb"]: lpb_connection_id,
+            refund_fields[environment]["banner_reservations_ots"]: ots_connection_id,
+            refund_fields[environment]["sub_description"]:  record_data[
+                refund_fields[environment]["sub_description"]
             ],
         }
     )
