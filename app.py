@@ -278,7 +278,7 @@ def update_parent_reservation(environment, knack_record_id, today_date):
             }
         )
         parent_update_response = requests.put(
-            f"{KNACK_API_URL}{OTS_OBJECT_ID_UAT}/records/{parent_record_id}",
+            f"{KNACK_API_URL}{OTS_OBJECT_ID}/records/{parent_record_id}",
             headers=headers[environment],
             data=ots_payload,
         )
@@ -297,7 +297,7 @@ def update_parent_reservation(environment, knack_record_id, today_date):
             }
         )
         parent_update_response = requests.put(
-            f"{KNACK_API_URL}{LPB_OBJECT_ID_UAT}/records/{parent_record_id}",
+            f"{KNACK_API_URL}{LPB_OBJECT_ID}/records/{parent_record_id}",
             headers=headers[environment],
             data=lpb_payload,
         )
