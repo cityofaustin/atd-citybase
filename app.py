@@ -166,7 +166,7 @@ def get_knack_refund_payload(
     :param knack_invoice: info from citybase payload
     :param today_date: mm/dd/YYYY H:M datetime string
     :param knack_record_id:
-    :return: json object to send along with POST
+    :return: json object to insert into transactions table in knack
     """
     refund_fields = {
         "uat": {
@@ -236,13 +236,12 @@ def create_message_json(
     environment, citybase_id, today_date, knack_invoice, payment_status
 ):
     """
-
     :param environment: "uat" or "prod" depending on which endpoint calls this function
     :param citybase_id: citybase transaction id
     :param today_date: mm/dd/YYYY H:M datetime string
     :param knack_invoice: info from citybase payload
     :param payment_status: info from citybase payload
-    :return:
+    :return: json object to insert in knack citybase_messages table
     """
     return json.dumps(
         {
@@ -256,6 +255,10 @@ def create_message_json(
 
 
 def update_parent_reservation(environment, knack_record_id, today_date):
+    """
+    Uses a knack_record_id to look up the transaction in knack, then finds the appropriate connection field
+    And sends payload to knack, marking parent reservation payment received status as TRUE
+    """
     record_response = requests.get(
         f"{KNACK_API_URL}{TRANSACTIONS_OBJECT_ID}/records/{knack_record_id}",
         headers=headers[environment],
@@ -304,7 +307,7 @@ def update_parent_reservation(environment, knack_record_id, today_date):
 @app.route("/")
 def index():
     now = datetime.now().isoformat()
-    return f"Austin Transportation Department Citybase healthcheck {now}"
+    return f"Austin Transportation Public Works Department Citybase healthcheck {now}"
 
 
 @app.route("/citybase_postback", methods=["POST"])
@@ -313,13 +316,15 @@ def handle_postback():
     citybase_data = request.get_json()
 
     knack_record_id = get_knack_record_id(citybase_data)
-    # if knack_record_id is not a string, then it is an error tuple
+    # if knack_record_id is not a string, then it is an error tuple, for example ("Missing custom attributes", 400)
     if not isinstance(knack_record_id, str):
+        # returns an error message and error code
         return knack_record_id
 
     knack_invoice = get_knack_invoice(citybase_data)
     # if knack_record_id is not a string, then it is an error tuple
     if not isinstance(knack_invoice, str):
+        # returns an error message and error code
         return knack_invoice
 
     payment_status = citybase_data["data"]["status"]
@@ -350,11 +355,11 @@ def handle_postback():
             headers=headers["prod"],
             data=knack_payload,
         )
-    # otherwise, update existing record payment status
+    # otherwise, update existing record payment status on transactions table
     else:
         knack_payload = get_knack_payload("prod", payment_status, today_date)
         if payment_status == "successful":
-            # if this was a successful payment we need to update reservation record
+            # if this was a successful payment we also need to update reservation record
             update_parent_reservation("prod", knack_record_id, today_date)
         knack_response = requests.put(
             f"{KNACK_API_URL}{TRANSACTIONS_OBJECT_ID}/records/{knack_record_id}",
