@@ -1,0 +1,13 @@
+version: '3.7'
+services:
+  citybase-flask-app:
+    command: ["/usr/bin/python3", "/root/app/app.py"]
+    container_name: citybase-flask-app
+    build: .
+    restart: always
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/root/app
+    env_file:
+      - ./environment_variables.env
