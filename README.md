@@ -15,6 +15,7 @@ Once a user has completed the payment transaction, Citybase then sends a postbac
 
 Example citybase payload
 ```json
+  {
   "data": {
     "total_amount": 6000.00,
     "service_fee": 0.55,
@@ -33,25 +34,29 @@ Example citybase payload
     },
     "bank_account": null,
     "created_at": "2022-10-13T17:58:00Z",
-    "line_items": [{
-      "id": "deea9dae-0121-49dc-be59-c3b40dccdb3d",
-      "amount": 600000,
-      "custom_attributes": {
-        "invoice_number": "INV2022-100250",
-        "knack_record_id": "638e5bd41370e500241c3e1f",
-        "line_item_description": "Lamppost my big winter event",
-        "line_item_sub_description": "INV2022-100250 - convention center"
+    "line_items": [
+      {
+        "id": "deea9dae-0121-49dc-be59-c3b40dccdb3d",
+        "amount": 600000,
+        "custom_attributes": {
+          "invoice_number": "INV2022-100250",
+          "knack_record_id": "638e5bd41370e500241c3e1f",
+          "line_item_description": "Lamppost my big winter event",
+          "line_item_sub_description": "INV2022-100250 - convention center"
+        }
       }
-    }],
+    ],
     "associated_payments": [],
-    "custom_attributes": [      
-			{"key": "invoice_number",
-			 "value": "INV2022-100250"
-			},
-			{"key":  "knack_record_id", 
-			"value": "638e5bd41370e500241c3e1f"
-			}
-		]
+    "custom_attributes": [
+      {
+        "key": "invoice_number",
+        "value": "INV2022-100250"
+      },
+      {
+        "key": "knack_record_id",
+        "value": "638e5bd41370e500241c3e1f"
+      }
+    ]
   }
 }
 ```

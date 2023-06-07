@@ -282,7 +282,7 @@ def update_parent_reservation(environment, knack_record_id, today_date):
             headers=headers[environment],
             data=ots_payload,
         )
-        print(parent_update_response)
+        app.logger.info("Parent update response: " + str(parent_update_response))
     if record_data[field_maps[environment]["lpb_connection_field"]]:
         # get parent record id
         parent_record_response = record_data[
@@ -301,7 +301,7 @@ def update_parent_reservation(environment, knack_record_id, today_date):
             headers=headers[environment],
             data=lpb_payload,
         )
-        print(parent_update_response)
+        app.logger.info("Parent update response: " + str(parent_update_response))
 
 
 @app.route("/")
