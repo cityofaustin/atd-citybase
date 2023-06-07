@@ -1,7 +1,6 @@
 version: '3.7'
 services:
   citybase-flask-app:
-    #command: ["tail", "-f", "/dev/null"]
     command: ["/usr/bin/python3", "/root/app/app.py"]
     container_name: citybase-flask-app
     build: .
