@@ -4,6 +4,8 @@ import requests
 import json
 import os
 
+from utils.field_maps import FIELD_MAPS
+
 KNACK_API_URL = "https://api.knack.com/v1/objects/"
 # uat objects
 KNACK_APP_ID_UAT = os.getenv("KNACK_APP_ID_UAT")
@@ -20,49 +22,6 @@ MESSAGES_OBJECT_ID = "object_181"
 OTS_OBJECT_ID = "object_164"
 LPB_OBJECT_ID = "object_161"
 
-# map knack field ids to human rememberable names
-field_maps = {
-    "uat": {
-        "total_amount": "field_3338",
-        "payment_status": "field_3352",
-        "invoice_id": "field_3333",
-        "created_date": "field_3320",
-        "transaction_paid_date": "field_3366",
-        "messages_invoice_id": "field_3365",
-        "messages_connected_invoice": "field_3372",
-        "messages_created_date": "field_3369",
-        "messages_status": "field_3367",
-        "messages_citybase_id": "field_3378",
-        "ots_connection_field": "field_3327",
-        "ots_application_status": "field_2862",  # in banner_reservations object
-        "ots_paid_status": "field_2858",  # in banner_reservations object
-        "ots_payment_date": "field_3144",  # in banner_reservations object
-        "lpb_connection_field": "field_3326",
-        "lpb_application_status": "field_2796",  # in banner_reservations object
-        "lpb_paid_status": "field_2808",  # in banner_reservations object
-        "lpb_payment_date": "field_2809",  # in banner_reservations object
-    },
-    "prod": {
-        "total_amount": "field_3342",
-        "payment_status": "field_3353",
-        "invoice_id": "field_3327",
-        "created_date": "field_3320",
-        "transaction_paid_date": "field_3352",
-        "messages_invoice_id": "field_3363",
-        "messages_connected_invoice": "field_3369",
-        "messages_created_date": "field_3366",
-        "messages_status": "field_3361",
-        "messages_citybase_id": "field_3368",
-        "ots_connection_field": "field_3329",
-        "ots_application_status": "field_2862",  # in banner_reservations object
-        "ots_paid_status": "field_2858",  # in banner_reservations object
-        "ots_payment_date": "field_3144",  # in banner_reservations object
-        "lpb_connection_field": "field_3328",
-        "lpb_application_status": "field_2796",  # in banner_reservations object
-        "lpb_paid_status": "field_2808",  # in banner_reservations object
-        "lpb_payment_date": "field_2809",  # in banner_reservations object
-    },
-}
 
 # map citybase payment statuses to knack options
 payment_status_map = {
@@ -143,10 +102,10 @@ def get_knack_payload(environment, payment_status, today_date):
     """
     return json.dumps(
         {
-            field_maps[environment]["payment_status"]: payment_status_map[
+            FIELD_MAPS[environment]["payment_status"]: payment_status_map[
                 payment_status
             ],
-            field_maps[environment]["transaction_paid_date"]: today_date,
+            FIELD_MAPS[environment]["transaction_paid_date"]: today_date,
         }
     )
 
@@ -206,14 +165,14 @@ def get_knack_refund_payload(
 
     return json.dumps(
         {
-            field_maps[environment]["payment_status"]: payment_status_map[
+            FIELD_MAPS[environment]["payment_status"]: payment_status_map[
                 payment_status
             ],
-            field_maps[environment]["invoice_id"]: knack_invoice,
+            FIELD_MAPS[environment]["invoice_id"]: knack_invoice,
             # if it is a refund, store negative amount
-            field_maps[environment]["total_amount"]: f"-{payment_amount}",
-            field_maps[environment]["created_date"]: today_date,
-            field_maps[environment]["transaction_paid_date"]: today_date,
+            FIELD_MAPS[environment]["total_amount"]: f"-{payment_amount}",
+            FIELD_MAPS[environment]["created_date"]: today_date,
+            FIELD_MAPS[environment]["transaction_paid_date"]: today_date,
             refund_fields[environment]["customer_name"]: record_data[
                 refund_fields[environment]["customer_name"]
             ],
@@ -245,11 +204,11 @@ def create_message_json(
     """
     return json.dumps(
         {
-            field_maps[environment]["messages_invoice_id"]: knack_invoice,
-            field_maps[environment]["messages_connected_invoice"]: knack_invoice,
-            field_maps[environment]["messages_created_date"]: today_date,
-            field_maps[environment]["messages_status"]: payment_status,
-            field_maps[environment]["messages_citybase_id"]: citybase_id,
+            FIELD_MAPS[environment]["messages_invoice_id"]: knack_invoice,
+            FIELD_MAPS[environment]["messages_connected_invoice"]: knack_invoice,
+            FIELD_MAPS[environment]["messages_created_date"]: today_date,
+            FIELD_MAPS[environment]["messages_status"]: payment_status,
+            FIELD_MAPS[environment]["messages_citybase_id"]: citybase_id,
         }
     )
 
@@ -264,17 +223,17 @@ def update_parent_reservation(environment, knack_record_id, today_date):
         headers=headers[environment],
     )
     record_data = record_response.json()
-    if record_data[field_maps[environment]["ots_connection_field"]]:
+    if record_data[FIELD_MAPS[environment]["ots_connection_field"]]:
         # get parent record id
         parent_record_response = record_data[
-            field_maps[environment]["ots_connection_field"] + "_raw"
+            FIELD_MAPS[environment]["ots_connection_field"] + "_raw"
         ]
         parent_record_id = parent_record_response[0]["id"]
         ots_payload = json.dumps(
             {
-                field_maps[environment]["ots_application_status"]: "Approved",
-                field_maps[environment]["ots_paid_status"]: True,
-                field_maps[environment]["ots_payment_date"]: today_date,
+                FIELD_MAPS[environment]["ots_application_status"]: "Approved",
+                FIELD_MAPS[environment]["ots_paid_status"]: True,
+                FIELD_MAPS[environment]["ots_payment_date"]: today_date,
             }
         )
         parent_update_response = requests.put(
@@ -283,17 +242,17 @@ def update_parent_reservation(environment, knack_record_id, today_date):
             data=ots_payload,
         )
         app.logger.info("Parent update response: " + str(parent_update_response))
-    if record_data[field_maps[environment]["lpb_connection_field"]]:
+    if record_data[FIELD_MAPS[environment]["lpb_connection_field"]]:
         # get parent record id
         parent_record_response = record_data[
-            field_maps[environment]["lpb_connection_field"] + "_raw"
+            FIELD_MAPS[environment]["lpb_connection_field"] + "_raw"
         ]
         parent_record_id = parent_record_response[0]["id"]
         lpb_payload = json.dumps(
             {
-                field_maps[environment]["lpb_application_status"]: "Approved",
-                field_maps[environment]["lpb_paid_status"]: True,
-                field_maps[environment]["lpb_payment_date"]: today_date,
+                FIELD_MAPS[environment]["lpb_application_status"]: "Approved",
+                FIELD_MAPS[environment]["lpb_paid_status"]: True,
+                FIELD_MAPS[environment]["lpb_payment_date"]: today_date,
             }
         )
         parent_update_response = requests.put(
