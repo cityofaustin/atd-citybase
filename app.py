@@ -10,10 +10,7 @@ KNACK_API_URL = "https://api.knack.com/v1/objects/"
 # uat objects
 KNACK_APP_ID_UAT = os.getenv("KNACK_APP_ID_UAT")
 KNACK_API_KEY_UAT = os.getenv("KNACK_API_KEY_UAT")
-TRANSACTIONS_OBJECT_ID_UAT = "object_180"
-MESSAGES_OBJECT_ID_UAT = "object_181"
-OTS_OBJECT_ID_UAT = "object_164"
-LPB_OBJECT_ID_UAT = "object_161"
+
 # prod objects
 KNACK_APP_ID = os.getenv("KNACK_APP_ID")
 KNACK_API_KEY = os.getenv("KNACK_API_KEY")
@@ -270,7 +267,12 @@ def index():
 
 
 @app.route("/citybase_postback", methods=["POST"])
+@app.route("/citybase_postback_uat", methods=["POST"])
 def handle_postback():
+    env = "prod"
+    if request.path == "/citybase_postback_uat":
+        env = "uat"
+
     today_date = datetime.now().strftime("%m/%d/%Y %H:%M")
     citybase_data = request.get_json()
 
@@ -291,18 +293,18 @@ def handle_postback():
     citybase_id = citybase_data["data"]["id"]
 
     message_payload = create_message_json(
-        "prod", citybase_id, today_date, knack_invoice, payment_status
+        env, citybase_id, today_date, knack_invoice, payment_status
     )
     requests.post(
         f"{KNACK_API_URL}{MESSAGES_OBJECT_ID}/records/",
-        headers=headers["prod"],
+        headers=headers[env],
         data=message_payload,
     )
 
     # if a refund, post a new record to knack transactions table
     if payment_status == "refunded":
         knack_payload = get_knack_refund_payload(
-            "prod",
+            env,
             payment_status,
             payment_amount,
             knack_invoice,
@@ -311,78 +313,18 @@ def handle_postback():
         )
         knack_response = requests.post(
             f"{KNACK_API_URL}{TRANSACTIONS_OBJECT_ID}/records/",
-            headers=headers["prod"],
+            headers=headers[env],
             data=knack_payload,
         )
     # otherwise, update existing record payment status on transactions table
     else:
-        knack_payload = get_knack_payload("prod", payment_status, today_date)
+        knack_payload = get_knack_payload(env, payment_status, today_date)
         if payment_status == "successful":
             # if this was a successful payment we also need to update reservation record
-            update_parent_reservation("prod", knack_record_id, today_date)
+            update_parent_reservation(env, knack_record_id, today_date)
         knack_response = requests.put(
             f"{KNACK_API_URL}{TRANSACTIONS_OBJECT_ID}/records/{knack_record_id}",
-            headers=headers["prod"],
-            data=knack_payload,
-        )
-    if knack_response.status_code == 200:
-        return "Payment status updated", knack_response.status_code
-    # if unsuccessful, return knack's status response as response
-    return knack_response.text, knack_response.status_code
-
-
-@app.route("/citybase_postback_uat", methods=["POST"])
-def handle_postback_uat():
-    today_date = datetime.now().strftime("%m/%d/%Y %H:%M")
-    citybase_data = request.get_json()
-
-    knack_record_id = get_knack_record_id(citybase_data)
-    # if knack_record_id is not a string, then it is an error tuple
-    if not isinstance(knack_record_id, str):
-        return knack_record_id
-
-    knack_invoice = get_knack_invoice(citybase_data)
-    # if knack_record_id is not a string, then it is an error tuple
-    if not isinstance(knack_invoice, str):
-        return knack_invoice
-
-    payment_status = citybase_data["data"]["status"]
-    payment_amount = citybase_data["data"]["total_amount"]
-    citybase_id = citybase_data["data"]["id"]
-
-    message_payload = create_message_json(
-        "uat", citybase_id, today_date, knack_invoice, payment_status
-    )
-    requests.post(
-        f"{KNACK_API_URL}{MESSAGES_OBJECT_ID_UAT}/records/",
-        headers=headers["uat"],
-        data=message_payload,
-    )
-
-    # if a refund, post a new record to knack transactions table
-    if payment_status == "refunded":
-        knack_payload = get_knack_refund_payload(
-            "uat",
-            payment_status,
-            payment_amount,
-            knack_invoice,
-            today_date,
-            knack_record_id,
-        )
-        knack_response = requests.post(
-            f"{KNACK_API_URL}{TRANSACTIONS_OBJECT_ID_UAT}/records/",
-            headers=headers["uat"],
-            data=knack_payload,
-        )
-    # otherwise, update existing record payment status
-    else:
-        knack_payload = get_knack_payload("uat", payment_status, today_date)
-        if payment_status == "successful":
-            # if this was a successful payment we need to update reservation record
-            update_parent_reservation("uat", knack_record_id, today_date)
-        knack_response = requests.put(
-            f"{KNACK_API_URL}{TRANSACTIONS_OBJECT_ID_UAT}/records/{knack_record_id}",
-            headers=headers["uat"],
+            headers=headers[env],
             data=knack_payload,
         )
     if knack_response.status_code == 200:
