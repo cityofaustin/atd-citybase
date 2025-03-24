@@ -24,9 +24,9 @@ payment_status_map = {
 }
 
 headers = {
-        "X-Knack-Application-Id": KNACK_APP_ID,
-        "X-Knack-REST-API-Key": KNACK_API_KEY,
-        "Content-Type": "application/json",
+    "X-Knack-Application-Id": KNACK_APP_ID,
+    "X-Knack-REST-API-Key": KNACK_API_KEY,
+    "Content-Type": "application/json",
 }
 
 
@@ -87,9 +87,7 @@ def get_knack_payload(payment_status, today_date):
     """
     return json.dumps(
         {
-            FIELD_MAPS["payment_status"]: payment_status_map[
-                payment_status
-            ],
+            FIELD_MAPS["payment_status"]: payment_status_map[payment_status],
             FIELD_MAPS["transaction_paid_date"]: today_date,
         }
     )
@@ -111,12 +109,12 @@ def get_knack_refund_payload(
     :return: json object to insert into transactions table in knack
     """
     refund_fields = {
-            "customer_name": "field_3334",
-            "event_name": "field_3336",
-            "type": "field_3333",
-            "banner_reservations_lpb": "field_3328",
-            "banner_reservations_ots": "field_3329",
-            "sub_description": "field_3351"
+        "customer_name": "field_3334",
+        "event_name": "field_3336",
+        "type": "field_3333",
+        "banner_reservations_lpb": "field_3328",
+        "banner_reservations_ots": "field_3329",
+        "sub_description": "field_3351",
     }
     record_response = requests.get(
         f"{KNACK_API_URL}{TRANSACTIONS_OBJECT_ID}/records/{knack_record_id}",
@@ -127,37 +125,33 @@ def get_knack_refund_payload(
     # the connection record id is in the format "field_3326": "<span class=\"638e58b31370e500241c3388\">486</span>",
     # using the raw form of the field to get the identifier.
     try:
-        lpb_connection_id = record_data[f'{refund_fields["banner_reservations_lpb"]}_raw'][0]["identifier"]
+        lpb_connection_id = record_data[
+            f'{refund_fields["banner_reservations_lpb"]}_raw'
+        ][0]["identifier"]
     except IndexError:
         lpb_connection_id = None
 
     try:
-        ots_connection_id = record_data[f'{refund_fields["banner_reservations_ots"]}_raw'][0]["identifier"]
+        ots_connection_id = record_data[
+            f'{refund_fields["banner_reservations_ots"]}_raw'
+        ][0]["identifier"]
     except IndexError:
         ots_connection_id = None
 
     return json.dumps(
         {
-            FIELD_MAPS["payment_status"]: payment_status_map[
-                payment_status
-            ],
+            FIELD_MAPS["payment_status"]: payment_status_map[payment_status],
             FIELD_MAPS["invoice_id"]: knack_invoice,
             # if it is a refund, store negative amount
             FIELD_MAPS["total_amount"]: f"-{payment_amount}",
             FIELD_MAPS["created_date"]: today_date,
             FIELD_MAPS["transaction_paid_date"]: today_date,
-            refund_fields["customer_name"]: record_data[
-                refund_fields["customer_name"]
-            ],
-            refund_fields["event_name"]: record_data[
-                refund_fields["event_name"]
-            ],
-            refund_fields["type"]: record_data[
-                refund_fields["type"]
-            ],
+            refund_fields["customer_name"]: record_data[refund_fields["customer_name"]],
+            refund_fields["event_name"]: record_data[refund_fields["event_name"]],
+            refund_fields["type"]: record_data[refund_fields["type"]],
             refund_fields["banner_reservations_lpb"]: lpb_connection_id,
             refund_fields["banner_reservations_ots"]: ots_connection_id,
-            refund_fields["sub_description"]:  record_data[
+            refund_fields["sub_description"]: record_data[
                 refund_fields["sub_description"]
             ],
         }
@@ -261,7 +255,9 @@ def handle_postback():
     payment_amount = citybase_data["data"]["total_amount"]
     citybase_id = citybase_data["data"]["id"]
 
-    message_payload = create_message_json(citybase_id, today_date, knack_invoice, payment_status)
+    message_payload = create_message_json(
+        citybase_id, today_date, knack_invoice, payment_status
+    )
     requests.post(
         f"{KNACK_API_URL}{MESSAGES_OBJECT_ID}/records/",
         headers=headers,
