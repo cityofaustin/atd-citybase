@@ -19,3 +19,12 @@ FIELD_MAPS = {
     "lpb_paid_status": "field_2808",  # in banner_reservations object
     "lpb_payment_date": "field_2809",  # in banner_reservations object
 }
+
+REFUND_FIELDS = {
+        "customer_name": "field_3334",
+        "event_name": "field_3336",
+        "type": "field_3333",
+        "banner_reservations_lpb": "field_3328",
+        "banner_reservations_ots": "field_3329",
+        "sub_description": "field_3351",
+}

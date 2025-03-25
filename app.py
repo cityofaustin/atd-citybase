@@ -4,7 +4,7 @@ import requests
 import json
 import os
 
-from utils.field_maps import FIELD_MAPS
+from utils.field_maps import FIELD_MAPS, REFUND_FIELDS
 
 KNACK_API_URL = "https://api.knack.com/v1/objects/"
 
@@ -108,32 +108,25 @@ def get_knack_refund_payload(
     :param knack_record_id:
     :return: json object to insert into transactions table in knack
     """
-    refund_fields = {
-        "customer_name": "field_3334",
-        "event_name": "field_3336",
-        "type": "field_3333",
-        "banner_reservations_lpb": "field_3328",
-        "banner_reservations_ots": "field_3329",
-        "sub_description": "field_3351",
-    }
     record_response = requests.get(
         f"{KNACK_API_URL}{TRANSACTIONS_OBJECT_ID}/records/{knack_record_id}",
         headers=headers,
     )
+    record_response.raise_for_status()
     record_data = record_response.json()
 
     # the connection record id is in the format "field_3326": "<span class=\"638e58b31370e500241c3388\">486</span>",
     # using the raw form of the field to get the identifier.
     try:
         lpb_connection_id = record_data[
-            f'{refund_fields["banner_reservations_lpb"]}_raw'
+            f'{REFUND_FIELDS["banner_reservations_lpb"]}_raw'
         ][0]["identifier"]
     except IndexError:
         lpb_connection_id = None
 
     try:
         ots_connection_id = record_data[
-            f'{refund_fields["banner_reservations_ots"]}_raw'
+            f'{REFUND_FIELDS["banner_reservations_ots"]}_raw'
         ][0]["identifier"]
     except IndexError:
         ots_connection_id = None
@@ -146,13 +139,13 @@ def get_knack_refund_payload(
             FIELD_MAPS["total_amount"]: f"-{payment_amount}",
             FIELD_MAPS["created_date"]: today_date,
             FIELD_MAPS["transaction_paid_date"]: today_date,
-            refund_fields["customer_name"]: record_data[refund_fields["customer_name"]],
-            refund_fields["event_name"]: record_data[refund_fields["event_name"]],
-            refund_fields["type"]: record_data[refund_fields["type"]],
-            refund_fields["banner_reservations_lpb"]: lpb_connection_id,
-            refund_fields["banner_reservations_ots"]: ots_connection_id,
-            refund_fields["sub_description"]: record_data[
-                refund_fields["sub_description"]
+            REFUND_FIELDS["customer_name"]: record_data[REFUND_FIELDS["customer_name"]],
+            REFUND_FIELDS["event_name"]: record_data[REFUND_FIELDS["event_name"]],
+            REFUND_FIELDS["type"]: record_data[REFUND_FIELDS["type"]],
+            REFUND_FIELDS["banner_reservations_lpb"]: lpb_connection_id,
+            REFUND_FIELDS["banner_reservations_ots"]: ots_connection_id,
+            REFUND_FIELDS["sub_description"]: record_data[
+                REFUND_FIELDS["sub_description"]
             ],
         }
     )
@@ -235,10 +228,8 @@ def index():
 
 @app.route("/citybase_postback", methods=["POST"])
 def handle_postback():
-
     today_date = datetime.now().strftime("%m/%d/%Y %H:%M")
     citybase_data = request.get_json()
-
     knack_record_id = get_knack_record_id(citybase_data)
     # if knack_record_id is not a string, then it is an error tuple, for example ("Missing custom attributes", 400)
     if not isinstance(knack_record_id, str):
@@ -258,14 +249,18 @@ def handle_postback():
     message_payload = create_message_json(
         citybase_id, today_date, knack_invoice, payment_status
     )
-    requests.post(
+    app.logger.info("Sending message payload to Knack...")
+    app.logger.info(message_payload)
+    r = requests.post(
         f"{KNACK_API_URL}{MESSAGES_OBJECT_ID}/records/",
         headers=headers,
         data=message_payload,
     )
+    r.raise_for_status()
 
     # if a refund, post a new record to knack transactions table
     if payment_status == "refunded":
+        app.logger.info("Transaction is refund, creating new transaction record...")
         knack_payload = get_knack_refund_payload(
             payment_status,
             payment_amount,
@@ -280,6 +275,7 @@ def handle_postback():
         )
     # otherwise, update existing record payment status on transactions table
     else:
+        app.logger.info("Updating existing transaction record...")
         knack_payload = get_knack_payload(payment_status, today_date)
         if payment_status == "successful":
             # if this was a successful payment we also need to update reservation record

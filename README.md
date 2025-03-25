@@ -61,7 +61,7 @@ Example citybase payload
 }
 ```
 
-The app inserts a record in the citybase_messages table in the Street Banners Knack app. 
+The app first inserts a record in the citybase_messages table in the Street Banners Knack app.
 It then updates the transactions table, either by updating the status of the existing transaction or in the case of a refund, inserting a new record.
 
 If the transaction is PAID, then the parent reservation is also updated in knack. 
