@@ -249,8 +249,7 @@ def handle_postback():
     message_payload = create_message_json(
         citybase_id, today_date, knack_invoice, payment_status
     )
-    app.logger.info("Sending message payload to Knack...")
-    app.logger.info(message_payload)
+    app.logger.info("Updating Knack messages table...")
     r = requests.post(
         f"{KNACK_API_URL}{MESSAGES_OBJECT_ID}/records/",
         headers=headers,
