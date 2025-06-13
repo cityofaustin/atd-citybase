@@ -4,7 +4,6 @@ services:
     command: ["/usr/bin/python3", "/root/app/app.py"]
     container_name: citybase-flask-app
     build: .
-    restart: always
     ports:
       - "5000:5000"
     volumes:
@@ -17,7 +16,7 @@ services:
     working_dir: /root/app
     container_name: citybase-gunicorn-app
     build: .
-    restart: always
+    restart: unless-stopped
     ports:
       - "5000:5000"
     volumes:
