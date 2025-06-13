@@ -70,8 +70,13 @@ The response from the transaction update is then sent back to citybase.
 
 ## Development
 
+The `docker-compose.yml` in this repository uses [profiles](https://docs.docker.com/compose/profiles/) to define separate application configurations for `development`, `staging`, and `production`. You must specify which profile to use when starting the application.
+
 In the root of the git repository, please:
-* `docker-compose build` will build the task environment
-* Edit `environment_variables.env` to contain the desired environment variables. See `environment_variables.env_template` for a template
-* `docker-compose up -d` should start the app
+* `docker-compose build` will build the docker image for the services.
+* Edit `environment_variables.env` to contain the desired environment variables. See `environment_variables.env_template` for a template.
+* Use `docker-compose up -d` with the `--profile` flag to start the application:
+  * For **development**: `docker-compose --profile development up -d`
+  * For **staging**: `docker-compose --profile staging up -d`
+  * For **production**: `docker-compose --profile production up -d`
 * Edit files in place outside of the docker instance as usual when developing
