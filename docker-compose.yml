@@ -19,7 +19,7 @@ services:
     build: .
     restart: always
     ports:
-      - "5001:5000"
+      - "5000:5000"
     volumes:
       - .:/root/app
     env_file:
