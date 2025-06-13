@@ -11,7 +11,7 @@ services:
     env_file:
       - ./environment_variables.env
   citybase-gunicorn-app:
-    profiles: [production, staging]
+    profiles: [production, staging, uat]
     command: ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
     working_dir: /root/app
     container_name: citybase-gunicorn-app
