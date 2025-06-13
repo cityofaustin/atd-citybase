@@ -10,3 +10,15 @@ services:
       - .:/root/app
     env_file:
       - ./environment_variables.env
+  citybase-gunicorn-app:
+    command: ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
+    working_dir: /root/app
+    container_name: citybase-gunicorn-app
+    build: .
+    restart: always
+    ports:
+      - "5001:5000"
+    volumes:
+      - .:/root/app
+    env_file:
+      - ./environment_variables.env
