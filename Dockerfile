@@ -1,4 +1,4 @@
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 ENV TZ="America/Chicago"
 RUN apt-get update
 RUN apt-get update && \
@@ -8,5 +8,5 @@ RUN apt-get update && \
 RUN apt-get upgrade -y
 RUN apt-get install -y vim magic-wormhole aptitude python3-pip docker.io
 COPY ./requirements.txt /root/requirements.txt
-RUN pip install -r /root/requirements.txt
+RUN pip install -r /root/requirements.txt --break-system-packages
 WORKDIR /root/
