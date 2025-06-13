@@ -1,4 +1,3 @@
-version: '3.7'
 services:
   citybase-flask-app:
     command: ["/usr/bin/python3", "/root/app/app.py"]
