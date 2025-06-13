@@ -1,5 +1,6 @@
 services:
   citybase-flask-app:
+    profiles: [development]
     command: ["/usr/bin/python3", "/root/app/app.py"]
     container_name: citybase-flask-app
     build: .
@@ -11,6 +12,7 @@ services:
     env_file:
       - ./environment_variables.env
   citybase-gunicorn-app:
+    profiles: [production]
     command: ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
     working_dir: /root/app
     container_name: citybase-gunicorn-app
