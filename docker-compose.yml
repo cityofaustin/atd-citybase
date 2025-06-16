@@ -1,7 +1,7 @@
 services:
   citybase-flask-app:
     profiles: [development]
-    command: ["/usr/bin/python3", "/root/app/app.py"]
+    command: ["/usr/local/bin/python", "/root/app/app.py"]
     container_name: citybase-flask-app
     build: .
     ports:

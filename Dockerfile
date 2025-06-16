@@ -1,4 +1,4 @@
-FROM ubuntu:24.04
+FROM python:3.13-slim
 ENV TZ="America/Chicago"
 RUN apt-get update
 RUN apt-get update && \
@@ -6,7 +6,6 @@ RUN apt-get update && \
     ln -fs /usr/share/zoneinfo/America/Chicago /etc/localtime && \
     dpkg-reconfigure -f noninteractive tzdata
 RUN apt-get upgrade -y
-RUN apt-get install -y vim magic-wormhole aptitude python3-pip docker.io
 COPY ./requirements.txt /root/requirements.txt
 RUN pip install -r /root/requirements.txt --break-system-packages
 WORKDIR /root/
