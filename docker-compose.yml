@@ -1,10 +1,9 @@
-version: '3.7'
 services:
   citybase-flask-app:
     command: ["/usr/bin/python3", "/root/app/app.py"]
     container_name: citybase-flask-app
     build: .
-    restart: always
+    restart: unless-stopped
     ports:
       - "5000:5000"
     volumes:
