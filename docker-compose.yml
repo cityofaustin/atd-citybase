@@ -1,7 +1,7 @@
 services:
   citybase-flask-app:
     profiles: [development]
-    command: ["/usr/bin/python3", "/root/app/app.py"]
+    command: ["/usr/local/bin/python", "/root/app/app.py"]
     container_name: citybase-flask-app
     build: .
     ports:
@@ -9,8 +9,7 @@ services:
     volumes:
       - .:/root/app
     env_file:
-      - ./environment_variables.env
-
+      - .env
   citybase-gunicorn-app:
     profiles: [production, staging, uat]
     command: ["gunicorn", "--threads", "4", "--workers", "2", "--bind", "0.0.0.0:5000", "app:app"]
@@ -23,4 +22,4 @@ services:
     volumes:
       - .:/root/app
     env_file:
-      - ./environment_variables.env
+      - .env
