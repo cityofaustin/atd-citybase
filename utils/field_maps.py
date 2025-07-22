@@ -5,7 +5,7 @@ FIELD_MAPS = {
     "invoice_id": "field_3327",
     "created_date": "field_3320",
     "transaction_paid_date": "field_3352",
-    "messages_invoice_id": "field_3363",
+    "messages_invoice_id": "field_3363", # is this different in staging?
     "messages_connected_invoice": "field_3369",
     "messages_created_date": "field_3366",
     "messages_status": "field_3361",
