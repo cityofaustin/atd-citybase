@@ -124,7 +124,8 @@ def get_knack_refund_payload(
     )
     record_response.raise_for_status()
     record_data = record_response.json()
-    app.logger.info(f"Parent refund record data from knack {record_data}")
+    app.logger.info(f"Parent refund record data from knack")
+    app.logger.info(record_data)
 
     # the connection record id is in the format "field_3326": "<span class=\"638e58b31370e500241c3388\">486</span>",
     # using the raw form of the field to get the identifier.
@@ -191,7 +192,8 @@ def update_parent_reservation(knack_record_id, today_date):
         headers=headers,
     )
     record_data = record_response.json()
-    app.logger.info(f"Parent record data from knack {record_data}")
+    app.logger.info(f"Parent record data from knack")
+    app.logger.info(record_data)
     if record_data[FIELD_MAPS["ots_connection_field"]]:
         # get parent record id
         parent_record_response = record_data[
