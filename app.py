@@ -38,7 +38,6 @@ app = Flask(__name__)
 log_handler = CloudWatchLogHandler(
     log_group_name=f"citybase_{flask_env}", log_stream_name="postback_stream"
 )
-app.logger.addHandler(log_handler)
 logging.basicConfig(level=logging.INFO)
 logging.getLogger().addHandler(log_handler)
 
