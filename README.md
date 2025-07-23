@@ -1,6 +1,6 @@
 # atd-citybase
 
-https://citybase.austinmobility.io/
+Healthcheck url, must be on city network: https://citybase.austinmobility.io/
 
 ## Description
 
@@ -11,7 +11,7 @@ Flask based endpoint used to accept events delivered by Citybase to the Knack pl
 Citybase is the payment provider for the Over the Street and Lamppost Banner invoices.
 Once a reservation is created and approved in the Knack app, an invoice is generated and marked as ready to pay. Custom [javascript](https://github.com/cityofaustin/atd-knack/blob/master/code/street-banner/street-banner.js#L417) creates a payload to send to the [Citybase endpoint](https://invoice-service.prod.cityba.se/invoices/austin_tx_transportation/street_banner). This request responds with a url to process the payment request. Note, the amount must be in pennies.
 
-Once a user has completed the payment transaction, Citybase then sends a postback and waits for us to confirm receipt. Citybase does not consider the payment complete until it receives a 200 response.
+Once a user has completed the payment transaction, Citybase sends a postback and waits for us to confirm receipt. Citybase does not consider the payment complete until it receives a 200 response from us.
 
 Example citybase payload
 
