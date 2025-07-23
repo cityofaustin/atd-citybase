@@ -235,7 +235,7 @@ def update_parent_reservation(knack_record_id, today_date):
 @app.route("/")
 def index():
     now = datetime.now().isoformat()
-    app.logger.info(f" getting healthcheck at {now}")
+    app.logger.info(f"Healthcheck at {now}")
     return f"Austin Transportation Public Works Department Citybase healthcheck {now}"
 
 
@@ -272,7 +272,7 @@ def handle_postback():
         headers=headers,
         data=message_payload,
     )
-    print(r)
+    app.logger.info(r.status_code, r.text)
     r.raise_for_status()
 
     # if a refund, post a new record to knack transactions table
