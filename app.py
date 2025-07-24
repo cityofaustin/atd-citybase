@@ -240,6 +240,13 @@ def index():
     return f"Austin Transportation Public Works Department Citybase healthcheck {now}"
 
 
+@app.errorhandler(500)
+def internal_server_error(e):
+    # Log the error with more context
+    app.logger.error(f"Internal Server Error: {e}", exc_info=True)
+    return "Internal server error", 500
+
+
 @app.route("/citybase_postback", methods=["POST"])
 def handle_postback():
     today_date = datetime.now().strftime("%m/%d/%Y %H:%M")
@@ -273,7 +280,7 @@ def handle_postback():
         headers=headers,
         data=message_payload,
     )
-    app.logger.info(r.status_code, r.text)
+    app.logger.info(f"Response from updating messages table: {r}")
     r.raise_for_status()
 
     # if a refund, post a new record to knack transactions table
