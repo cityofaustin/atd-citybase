@@ -75,10 +75,10 @@ The `docker-compose.yml` in this repository uses [profiles](https://docs.docker.
 
 In the root of the git repository, please:
 
-- `docker-compose build` will build the docker image for the services.
+- `docker compose build` will build the docker image for the services.
 - Copy `env-template` to `.env` (which is git-ignored) and edit it to contain the desired environment variables.
-- Use `docker-compose up -d` with the `--profile` flag to start the application:
-  - For **development**: `docker-compose --profile development up -d`
-  - For **staging**: `docker-compose --profile staging up -d`
-  - For **production**: `docker-compose --profile production up -d`
+- Use `docker compose up -d` with the `--profile` flag to start the application:
+  - For **development**: `docker compose --profile development up -d`
+  - For **staging**: `docker compose --profile staging up -d`
+  - For **production**: `docker compose --profile production up -d`
 - Edit files in place outside of the docker instance as usual when developing
