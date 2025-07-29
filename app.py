@@ -146,24 +146,13 @@ def create_message_json(citybase_id, today_date, knack_invoice, payment_status):
     )
 
 
-def update_parent_reservation(knack_record_id, today_date):
+def update_parent_reservation(today_date, parent_record_id, knack_app, banner_type):
     """
     Uses a knack_record_id to look up the transaction in knack, then finds the appropriate connection field
     And sends payload to knack, marking parent reservation payment received status as TRUE
     """
-    record_response = requests.get(
-        f"{KNACK_API_URL}{TRANSACTIONS_OBJECT_ID}/records/{knack_record_id}",
-        headers=headers,
-    )
-    record_data = record_response.json()
-    app.logger.info(f"Parent record data from knack")
-    app.logger.info(record_data)
-    if record_data[FIELD_MAPS["ots_connection_field"]]:
-        # get parent record id
-        parent_record_response = record_data[
-            FIELD_MAPS["ots_connection_field"] + "_raw"
-        ]
-        parent_record_id = parent_record_response[0]["id"]
+
+    if banner_type == "OVER_THE_STREET":
         ots_payload = json.dumps(
             {
                 FIELD_MAPS["ots_application_status"]: "Approved",
@@ -177,12 +166,7 @@ def update_parent_reservation(knack_record_id, today_date):
             data=ots_payload,
         )
         app.logger.info("Parent update response: " + str(parent_update_response))
-    if record_data[FIELD_MAPS["lpb_connection_field"]]:
-        # get parent record id
-        parent_record_response = record_data[
-            FIELD_MAPS["lpb_connection_field"] + "_raw"
-        ]
-        parent_record_id = parent_record_response[0]["id"]
+    elif banner_type == "LAMPPOST":
         lpb_payload = json.dumps(
             {
                 FIELD_MAPS["lpb_application_status"]: "Approved",
