@@ -53,7 +53,7 @@ def unpack_custom_attributes(custom_attributes_list):
     return custom_attributes
 
 
-def get_knack_payload(payment_status, today_date):
+def create_knack_payload(payment_status, today_date):
     """
     :param payment_status: info from citybase payload
     :param today_date: mm/dd/YYYY H:M datetime string
@@ -216,25 +216,22 @@ def internal_server_error(e):
 def handle_postback():
     today_date = datetime.now().strftime("%m/%d/%Y %H:%M")
     citybase_data = request.get_json()
+    # TODO: validate citybase_data
     app.logger.info(f"New POST with payload: ")
     app.logger.info(citybase_data)
-    knack_record_id = get_knack_record_id(citybase_data)
-    # if knack_record_id is not a string, then it is an error tuple, for example ("Missing custom attributes", 400)
-    if not isinstance(knack_record_id, str):
-        # returns an error message and error code
-        return knack_record_id
-
-    knack_invoice = get_knack_invoice(citybase_data)
-    # if knack_invoice is not a string, then it is an error tuple
-    if not isinstance(knack_invoice, str):
-        # returns an error message and error code
-        return knack_invoice
-
+    # information from citybase payload
+    custom_attributes = unpack_custom_attributes(citybase_data["data"]["custom_attributes"])
+    knack_record_id = custom_attributes["knack_record_id"]
+    knack_invoice = custom_attributes["invoice_number"]
+    knack_app = custom_attributes["knack_app"]
+    banner_type = custom_attributes["banner_type"] if knack_app == "STREET_BANNER" else None
+    parent_record_id = custom_attributes["parent_record_id"]
     payment_status = citybase_data["data"]["status"]
     payment_amount = citybase_data["data"]["total_amount"]
     citybase_id = citybase_data["data"]["id"]
     app.logger.info(f"Payment status: {payment_status}, invoice number: {knack_invoice}")
 
+    # update the messages table
     message_payload = create_message_json(
         citybase_id, today_date, knack_invoice, payment_status
     )
@@ -267,11 +264,11 @@ def handle_postback():
     # otherwise, update existing record payment status on transactions table
     else:
         app.logger.info("Updating existing transaction record...")
-        knack_payload = get_knack_payload(payment_status, today_date)
+        knack_payload = create_knack_payload(payment_status, today_date)
         if payment_status == "successful":
             # if this was a successful payment we also need to update reservation record
             app.logger.info("Updating parent reservation...")
-            update_parent_reservation(knack_record_id, today_date)
+            update_parent_reservation(today_date, parent_record_id, knack_app, banner_type)
         knack_response = requests.put(
             f"{KNACK_API_URL}{TRANSACTIONS_OBJECT_ID}/records/{knack_record_id}",
             headers=headers,
