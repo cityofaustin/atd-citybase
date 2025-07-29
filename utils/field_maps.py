@@ -12,7 +12,7 @@ FIELD_MAPS = {
     "messages_citybase_id": "field_3368",
     "ots_connection_field": "field_3329",
     "ots_application_status": "field_2862",  # in banner_reservations object
-    "ots_paid_status": "field_2858",  # in banner_reservations object
+    "ots_paid_status": "field_2858",  # in banner_reservations object THIS IS CALLED PAYMENT RECEIVED
     "ots_payment_date": "field_3144",  # in banner_reservations object
     "lpb_connection_field": "field_3328",
     "lpb_application_status": "field_2796",  # in banner_reservations object

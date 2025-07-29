@@ -38,54 +38,19 @@ app = Flask(__name__)
 log_handler = CloudWatchLogHandler(
     log_group_name=f"citybase_{flask_env}", log_stream_name="postback_stream"
 )
-logging.basicConfig(level=logging.INFO)
-logging.getLogger().addHandler(log_handler)
+# logging.basicConfig(level=logging.INFO)
+# logging.getLogger().addHandler(log_handler)
 
 
-def get_custom_attribute(custom_attributes, attribute_name):
+def unpack_custom_attributes(custom_attributes_list):
     """
-    :param custom_attributes: list of objects {key, object} from citybase
-    :param attribute_name: string, which attribute we are fetching
-    :return: knack record id string or False if not found
+    :param custom_attributes_list: list of dicts {"key":"key_name", "object":"value"} from citybase
+    :return: dictionary of "keyname":"value" pairs
     """
-    if len(custom_attributes) < 1:
-        return False
-    for attribute in custom_attributes:
-        if attribute["key"] == attribute_name:
-            return attribute["value"]
-    return False
-
-
-def get_knack_record_id(citybase_data):
-    """
-    :param citybase_data: json from POST request
-    :return: str, knack record id or tuple(text, resp code), if error
-    """
-    try:
-        knack_record_id = get_custom_attribute(
-            citybase_data["data"]["custom_attributes"], "knack_record_id"
-        )
-    except KeyError:
-        return "Missing custom attributes", 400
-    if not knack_record_id:
-        return "Missing knack record id custom attribute", 400
-    return knack_record_id
-
-
-def get_knack_invoice(citybase_data):
-    """
-    :param citybase_data: json from POST request
-    :return: str, knack record id or tuple(text, resp code), if error
-    """
-    try:
-        knack_invoice = get_custom_attribute(
-            citybase_data["data"]["custom_attributes"], "invoice_number"
-        )
-    except KeyError:
-        return "Missing custom attributes", 400
-    if not knack_invoice:
-        return "Missing knack invoice number custom attribute", 400
-    return knack_invoice
+    custom_attributes = {}
+    for a in custom_attributes_list:
+        custom_attributes.update({a["key"]: a["value"]})
+    return custom_attributes
 
 
 def get_knack_payload(payment_status, today_date):
