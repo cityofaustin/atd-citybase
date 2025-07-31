@@ -13,10 +13,14 @@ KNACK_API_URL = "https://api.knack.com/v1/objects/"
 flask_env = os.getenv("FLASK_ENV", "staging")
 KNACK_APP_ID = os.getenv("KNACK_APP_ID")
 KNACK_API_KEY = os.getenv("KNACK_API_KEY")
-TRANSACTIONS_OBJECT_ID = "object_180"
-MESSAGES_OBJECT_ID = "object_181"
+
+STREET_BANNER_MESSAGES_OBJECT_ID = "object_181"
+STREET_BANNER_TRANSACTIONS_OBJECT_ID = "object_180"
 OTS_OBJECT_ID = "object_164"
 LPB_OBJECT_ID = "object_161"
+
+SMART_MOBILITY_MESSAGES_OBJECT_ID = "object_38"
+SMART_MOBILITY_TRANSACTIONS_OBJECT_ID = "object_39"
 
 
 # map citybase payment statuses to knack options
