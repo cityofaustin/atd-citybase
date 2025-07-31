@@ -6,13 +6,12 @@ import requests
 import json
 import os
 
-from utils.field_maps import FIELD_MAPS, REFUND_FIELDS
+from utils.field_maps import FIELD_MAPS
+from utils.headers import knack_headers
 
 KNACK_API_URL = "https://api.knack.com/v1/objects/"
 
 flask_env = os.getenv("FLASK_ENV", "staging")
-KNACK_APP_ID = os.getenv("KNACK_APP_ID")
-KNACK_API_KEY = os.getenv("KNACK_API_KEY")
 
 STREET_BANNER_MESSAGES_OBJECT_ID = "object_181"
 STREET_BANNER_TRANSACTIONS_OBJECT_ID = "object_180"
@@ -28,12 +27,6 @@ payment_status_map = {
     "successful": "PAID",
     "voided": "VOID",
     "refunded": "REFUND",
-}
-
-headers = {
-    "X-Knack-Application-Id": KNACK_APP_ID,
-    "X-Knack-REST-API-Key": KNACK_API_KEY,
-    "Content-Type": "application/json",
 }
 
 
@@ -217,7 +210,8 @@ def handle_postback():
     payment_status = citybase_data["data"]["status"]
     payment_amount = citybase_data["data"]["total_amount"]
     citybase_id = citybase_data["data"]["id"]
-    app.logger.info(f"Payment status: {payment_status}, invoice number: {knack_invoice}")
+
+    headers = knack_headers(knack_app)
 
     # update the messages table
     message_payload = create_message_json(
