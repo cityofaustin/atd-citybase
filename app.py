@@ -67,7 +67,6 @@ def create_knack_payload(payment_status, today_date, knack_app):
     :return: json object to send along with PUT call to knack
     """
     knack_fields = FIELD_MAPS.get(knack_app).get(knack_env).get("TRANSACTIONS")
-    app.logger.info(knack_fields) # TODO: delete this after testing
     return json.dumps(
         {
             knack_fields["payment_status"]: payment_status_map[payment_status],
@@ -238,7 +237,7 @@ def handle_postback():
 
     # update the messages table
     message_payload = create_message_json(
-        citybase_id, today_date, knack_invoice, payment_status
+        citybase_id, today_date, knack_invoice, payment_status, knack_app
     )
     app.logger.info("Updating Knack messages table with payload: ")
     app.logger.info(message_payload)

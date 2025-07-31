@@ -47,7 +47,7 @@ FIELD_MAPS = {
                 "sub_description": "field_3349",
             },
             "MESSAGES": {
-                "messages_invoice_id": "field_3333",
+                "messages_invoice_id": "field_3365",
                 "messages_connected_invoice": "field_3372",  # invoice_transactions_banner
                 "messages_created_date": "field_3369",
                 "messages_status": "field_3367",
