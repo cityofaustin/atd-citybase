@@ -12,6 +12,7 @@ from utils.headers import knack_headers
 KNACK_API_URL = "https://api.knack.com/v1/objects/"
 
 flask_env = os.getenv("FLASK_ENV", "staging")
+knack_env = "PRODUCTION" if flask_env == "production" else "UAT"
 
 STREET_BANNER_MESSAGES_OBJECT_ID = "object_181"
 STREET_BANNER_TRANSACTIONS_OBJECT_ID = "object_180"
@@ -59,16 +60,18 @@ def get_object_ids(knack_app):
         raise ValueError(f"Incorrect knack app in payload {knack_app}, must be STREET_BANNER or SMART_MOBILITY")
 
 
-def create_knack_payload(payment_status, today_date):
+def create_knack_payload(payment_status, today_date, knack_app):
     """
     :param payment_status: info from citybase payload
     :param today_date: mm/dd/YYYY H:M datetime string
     :return: json object to send along with PUT call to knack
     """
+    knack_fields = FIELD_MAPS.get(knack_app).get(knack_env).get("TRANSACTIONS")
+    app.logger.info(knack_fields) # TODO: delete this after testing
     return json.dumps(
         {
-            FIELD_MAPS["payment_status"]: payment_status_map[payment_status],
-            FIELD_MAPS["transaction_paid_date"]: today_date,
+            knack_fields["payment_status"]: payment_status_map[payment_status],
+            knack_fields["transaction_paid_date"]: today_date,
         }
     )
 
@@ -81,6 +84,7 @@ def get_knack_refund_payload(
     knack_record_id,
     headers,
     transactions_object_id,
+    knack_app
 ):
     """
     :param payment_status: info from citybase payload
@@ -90,6 +94,9 @@ def get_knack_refund_payload(
     :param knack_record_id:
     :return: json object to insert into transactions table in knack
     """
+
+    knack_fields = FIELD_MAPS.get(knack_app).get(knack_env).get("TRANSACTION_REFUND")
+    knack_fields.update(FIELD_MAPS.get(knack_app).get(knack_env).get("TRANSACTIONS"))
     record_response = requests.get(
         f"{KNACK_API_URL}{transactions_object_id}/records/{knack_record_id}",
         headers=headers,
@@ -103,39 +110,39 @@ def get_knack_refund_payload(
     # using the raw form of the field to get the identifier.
     try:
         lpb_connection_id = record_data[
-            f'{REFUND_FIELDS["banner_reservations_lpb"]}_raw'
+            f'{knack_fields["banner_reservations_lpb"]}_raw'
         ][0]["identifier"]
     except IndexError:
         lpb_connection_id = None
 
     try:
         ots_connection_id = record_data[
-            f'{REFUND_FIELDS["banner_reservations_ots"]}_raw'
+            f'{knack_fields["banner_reservations_ots"]}_raw'
         ][0]["identifier"]
     except IndexError:
         ots_connection_id = None
 
     return json.dumps(
         {
-            FIELD_MAPS["payment_status"]: payment_status_map[payment_status],
-            FIELD_MAPS["invoice_id"]: knack_invoice,
+            knack_fields["payment_status"]: payment_status_map[payment_status],
+            knack_fields["invoice_id"]: knack_invoice,
             # if it is a refund, store negative amount
-            FIELD_MAPS["total_amount"]: f"-{payment_amount}",
-            FIELD_MAPS["created_date"]: today_date,
-            FIELD_MAPS["transaction_paid_date"]: today_date,
-            REFUND_FIELDS["customer_name"]: record_data[REFUND_FIELDS["customer_name"]],
-            REFUND_FIELDS["event_name"]: record_data[REFUND_FIELDS["event_name"]],
-            REFUND_FIELDS["type"]: record_data[REFUND_FIELDS["type"]],
-            REFUND_FIELDS["banner_reservations_lpb"]: lpb_connection_id,
-            REFUND_FIELDS["banner_reservations_ots"]: ots_connection_id,
-            REFUND_FIELDS["sub_description"]: record_data[
-                REFUND_FIELDS["sub_description"]
+            knack_fields["total_amount"]: f"-{payment_amount}",
+            knack_fields["created_date"]: today_date,
+            knack_fields["transaction_paid_date"]: today_date,
+            knack_fields["customer_name"]: record_data[knack_fields["customer_name"]],
+            knack_fields["event_name"]: record_data[knack_fields["event_name"]],
+            knack_fields["type"]: record_data[knack_fields["type"]],
+            knack_fields["banner_reservations_lpb"]: lpb_connection_id,
+            knack_fields["banner_reservations_ots"]: ots_connection_id,
+            knack_fields["sub_description"]: record_data[
+                knack_fields["sub_description"]
             ],
         }
     )
 
 
-def create_message_json(citybase_id, today_date, knack_invoice, payment_status):
+def create_message_json(citybase_id, today_date, knack_invoice, payment_status, knack_app):
     """
     :param citybase_id: citybase transaction id
     :param today_date: mm/dd/YYYY H:M datetime string
@@ -143,13 +150,15 @@ def create_message_json(citybase_id, today_date, knack_invoice, payment_status):
     :param payment_status: info from citybase payload
     :return: json object to insert in knack citybase_messages table
     """
+    knack_fields = FIELD_MAPS.get(knack_app).get(knack_env).get("MESSAGES")
+
     return json.dumps(
         {
-            FIELD_MAPS["messages_invoice_id"]: knack_invoice,
-            FIELD_MAPS["messages_connected_invoice"]: knack_invoice,
-            FIELD_MAPS["messages_created_date"]: today_date,
-            FIELD_MAPS["messages_status"]: payment_status,
-            FIELD_MAPS["messages_citybase_id"]: citybase_id,
+            knack_fields["messages_invoice_id"]: knack_invoice,
+            knack_fields["messages_connected_invoice"]: knack_invoice,
+            knack_fields["messages_created_date"]: today_date,
+            knack_fields["messages_status"]: payment_status,
+            knack_fields["messages_citybase_id"]: citybase_id,
         }
     )
 
@@ -161,11 +170,12 @@ def update_parent_reservation(today_date, parent_record_id, banner_type, headers
     """
 
     if banner_type == "OVER_THE_STREET":
+        knack_fields = FIELD_MAPS.get("STREET_BANNER").get(knack_env).get("OVER_THE_STREET")
         ots_payload = json.dumps(
             {
-                FIELD_MAPS["ots_application_status"]: "Approved",
-                FIELD_MAPS["ots_paid_status"]: True,
-                FIELD_MAPS["ots_payment_date"]: today_date,
+                knack_fields["ots_application_status"]: "Approved",
+                knack_fields["ots_paid_status"]: True,
+                knack_fields["ots_payment_date"]: today_date,
             }
         )
         parent_update_response = requests.put(
@@ -175,11 +185,12 @@ def update_parent_reservation(today_date, parent_record_id, banner_type, headers
         )
         app.logger.info("Parent update response: " + str(parent_update_response))
     elif banner_type == "LAMPPOST":
+        knack_fields = FIELD_MAPS.get("STREET_BANNER").get(knack_env).get("LAMPPOST")
         lpb_payload = json.dumps(
             {
-                FIELD_MAPS["lpb_application_status"]: "Approved",
-                FIELD_MAPS["lpb_paid_status"]: True,
-                FIELD_MAPS["lpb_payment_date"]: today_date,
+                knack_fields["lpb_application_status"]: "Approved",
+                knack_fields["lpb_paid_status"]: True,
+                knack_fields["lpb_payment_date"]: today_date,
             }
         )
         parent_update_response = requests.put(
@@ -249,7 +260,8 @@ def handle_postback():
             today_date,
             knack_record_id,
             headers,
-            transactions_object_id
+            transactions_object_id,
+            knack_app
         )
         knack_response = requests.post(
             f"{KNACK_API_URL}{transactions_object_id}/records/",
@@ -260,7 +272,7 @@ def handle_postback():
     # otherwise, update existing record payment status on transactions table
     else:
         app.logger.info("Updating existing transaction record...")
-        knack_payload = create_knack_payload(payment_status, today_date)
+        knack_payload = create_knack_payload(payment_status, today_date, knack_app)
         if payment_status == "successful" and knack_app == "STREET_BANNER":
             # if this was a successful payment we also need to update reservation record
             app.logger.info("Updating parent reservation...")
