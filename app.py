@@ -146,10 +146,10 @@ def create_message_json(citybase_id, today_date, knack_invoice, payment_status):
     )
 
 
-def update_parent_reservation(today_date, parent_record_id, knack_app, banner_type):
+def update_parent_reservation(today_date, parent_record_id, banner_type):
     """
-    Uses a knack_record_id to look up the transaction in knack, then finds the appropriate connection field
-    And sends payload to knack, marking parent reservation payment received status as TRUE
+    Checks banner_type and updates appropriate parent reservation record in knack
+    Sets payment received status as TRUE, application as Approved and payment date as today
     """
 
     if banner_type == "OVER_THE_STREET":
@@ -249,10 +249,10 @@ def handle_postback():
     else:
         app.logger.info("Updating existing transaction record...")
         knack_payload = create_knack_payload(payment_status, today_date)
-        if payment_status == "successful":
+        if payment_status == "successful" and knack_app == "STREET_BANNER":
             # if this was a successful payment we also need to update reservation record
             app.logger.info("Updating parent reservation...")
-            update_parent_reservation(today_date, parent_record_id, knack_app, banner_type)
+            update_parent_reservation(today_date, parent_record_id, banner_type)
         knack_response = requests.put(
             f"{KNACK_API_URL}{TRANSACTIONS_OBJECT_ID}/records/{knack_record_id}",
             headers=headers,

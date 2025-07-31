@@ -1,5 +1,3 @@
-# map knack field ids to human rememberable names
-
 STREET_BANNER_TRANSACTION_REFUND_PRODUCTION = {
     "total_amount": "field_3342",
     "invoice_id": "field_3327",
@@ -24,8 +22,6 @@ STREET_BANNER_TRANSACTION_REFUND_DEVELOPMENT = {
     "sub_description": "field_3349",
 }
 
-STREET_BANNER_MESSAGES_OBJECT_ID = "object_181"
-
 STREET_BANNER_MESSAGES_PRODUCTION = {
     "messages_invoice_id": "field_3363",
     "messages_connected_invoice": "field_3369", # invoice_transaction
@@ -42,8 +38,6 @@ STREET_BANNER_MESSAGES_DEVELOPMENT = {
     "messages_citybase_id": "field_3378",
 }
 
-STREET_BANNER_TRANSACTIONS_OBJECT_ID = "object_180"
-
 STREET_BANNER_TRANSACTIONS_PRODUCTION = {
     "payment_status": "field_3353", # called transaction status in knack #TODO: rename to match knack
     "transaction_paid_date": "field_3352",
@@ -53,8 +47,6 @@ STREET_BANNER_TRANSACTIONS_DEVELOPMENT = {
     "payment_status": "field_3352", # called transaction status in knack #TODO: rename to match knack
     "transaction_paid_date": "field_3366",
 }
-
-OTS_OBJECT_ID = "object_164"
 
 OVER_THE_STREET_PRODUCTION = {
     "ots_application_status": "field_2862",
@@ -68,8 +60,6 @@ OVER_THE_STREET_DEVELOPMENT = {
     "ots_payment_date": "field_3144",
 }
 
-LPB_OBJECT_ID = "object_161"
-
 LAMPPOST_PRODUCTION = {
     "lpb_application_status": "field_2796",
     "lpb_paid_status": "field_2808",  #  THIS IS CALLED PAYMENT RECEIVED
@@ -81,3 +71,7 @@ LAMPPOST_DEVELOPMENT = {
     "lpb_paid_status": "field_2808",  #  THIS IS CALLED PAYMENT RECEIVED
     "lpb_payment_date": "field_2809",
 }
+
+
+# UAT fields
+
