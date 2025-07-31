@@ -50,6 +50,15 @@ def unpack_custom_attributes(custom_attributes_list):
     return custom_attributes
 
 
+def get_object_ids(knack_app):
+    if knack_app == "STREET_BANNER":
+        return STREET_BANNER_MESSAGES_OBJECT_ID, STREET_BANNER_TRANSACTIONS_OBJECT_ID
+    if knack_app == "SMART_MOBILITY":
+        return SMART_MOBILITY_MESSAGES_OBJECT_ID, SMART_MOBILITY_TRANSACTIONS_OBJECT_ID
+    else:
+        raise ValueError(f"Incorrect knack app in payload {knack_app}, must be STREET_BANNER or SMART_MOBILITY")
+
+
 def create_knack_payload(payment_status, today_date):
     """
     :param payment_status: info from citybase payload
@@ -70,6 +79,8 @@ def get_knack_refund_payload(
     knack_invoice,
     today_date,
     knack_record_id,
+    headers,
+    transactions_object_id,
 ):
     """
     :param payment_status: info from citybase payload
@@ -80,7 +91,7 @@ def get_knack_refund_payload(
     :return: json object to insert into transactions table in knack
     """
     record_response = requests.get(
-        f"{KNACK_API_URL}{TRANSACTIONS_OBJECT_ID}/records/{knack_record_id}",
+        f"{KNACK_API_URL}{transactions_object_id}/records/{knack_record_id}",
         headers=headers,
     )
     record_response.raise_for_status()
@@ -143,7 +154,7 @@ def create_message_json(citybase_id, today_date, knack_invoice, payment_status):
     )
 
 
-def update_parent_reservation(today_date, parent_record_id, banner_type):
+def update_parent_reservation(today_date, parent_record_id, banner_type, headers):
     """
     Checks banner_type and updates appropriate parent reservation record in knack
     Sets payment received status as TRUE, application as Approved and payment date as today
@@ -212,6 +223,7 @@ def handle_postback():
     citybase_id = citybase_data["data"]["id"]
 
     headers = knack_headers(knack_app)
+    messages_object_id, transactions_object_id = get_object_ids(knack_app)
 
     # update the messages table
     message_payload = create_message_json(
@@ -220,7 +232,7 @@ def handle_postback():
     app.logger.info("Updating Knack messages table with payload: ")
     app.logger.info(message_payload)
     r = requests.post(
-        f"{KNACK_API_URL}{MESSAGES_OBJECT_ID}/records/",
+        f"{KNACK_API_URL}{messages_object_id}/records/",
         headers=headers,
         data=message_payload,
     )
@@ -236,9 +248,11 @@ def handle_postback():
             knack_invoice,
             today_date,
             knack_record_id,
+            headers,
+            transactions_object_id
         )
         knack_response = requests.post(
-            f"{KNACK_API_URL}{TRANSACTIONS_OBJECT_ID}/records/",
+            f"{KNACK_API_URL}{transactions_object_id}/records/",
             headers=headers,
             data=knack_payload,
         )
@@ -250,9 +264,9 @@ def handle_postback():
         if payment_status == "successful" and knack_app == "STREET_BANNER":
             # if this was a successful payment we also need to update reservation record
             app.logger.info("Updating parent reservation...")
-            update_parent_reservation(today_date, parent_record_id, banner_type)
+            update_parent_reservation(today_date, parent_record_id, banner_type, headers)
         knack_response = requests.put(
-            f"{KNACK_API_URL}{TRANSACTIONS_OBJECT_ID}/records/{knack_record_id}",
+            f"{KNACK_API_URL}{transactions_object_id}/records/{knack_record_id}",
             headers=headers,
             data=knack_payload,
         )
