@@ -322,5 +322,5 @@ def handle_postback():
 
 
 if __name__ == "__main__":
-    # todo: remember to turn off debug!
-    app.run(debug=True, host="0.0.0.0")
+    use_debug = flask_env == "development"
+    app.run(debug=use_debug, host="0.0.0.0")
