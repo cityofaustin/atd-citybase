@@ -10,7 +10,10 @@ from utils.field_maps import FIELD_MAPS, REFUND_FIELDS
 
 KNACK_API_URL = "https://api.knack.com/v1/objects/"
 
-flask_env = os.getenv("FLASK_ENV", "staging")
+flask_env = os.getenv("FLASK_ENV")
+if not flask_env:
+    raise Exception("Missing defined environment variable")
+
 KNACK_APP_ID = os.getenv("KNACK_APP_ID")
 KNACK_API_KEY = os.getenv("KNACK_API_KEY")
 TRANSACTIONS_OBJECT_ID = "object_180"

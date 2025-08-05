@@ -1,4 +1,4 @@
-FLASK_ENV="local"
+FLASK_ENV="development"
 KNACK_APP_ID=""
 KNACK_API_KEY=""
 
