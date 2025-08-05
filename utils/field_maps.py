@@ -20,7 +20,7 @@ FIELD_MAPS = {
                 "messages_citybase_id": "field_3368",
             },
             "TRANSACTIONS": {
-                "payment_status": "field_3353",  # called transaction status in knack #TODO: rename to match knack
+                "transaction_status": "field_3353",
                 "transaction_paid_date": "field_3352",
             },
             "OVER_THE_STREET": {
@@ -54,7 +54,7 @@ FIELD_MAPS = {
                 "messages_citybase_id": "field_3378",
             },
             "TRANSACTIONS": {
-                "payment_status": "field_3352",  # called transaction status in knack #TODO: rename to match knack
+                "transaction_status": "field_3352",
                 "transaction_paid_date": "field_3366",
             },
             "OVER_THE_STREET": {
@@ -88,7 +88,7 @@ FIELD_MAPS = {
                 "messages_citybase_id": "field_801",
             },
             "TRANSACTIONS": {
-                "payment_status": "field_826",  # called transaction status in knack #TODO: rename to match knack
+                "transaction_status": "field_826",
                 "transaction_paid_date": "field_827",
             },
         },
@@ -110,7 +110,7 @@ FIELD_MAPS = {
                 "messages_citybase_id": "field_801",
             },
             "TRANSACTIONS": {
-                "payment_status": "field_826",  # called transaction status in knack #TODO: rename to match knack
+                "transaction_status": "field_826",
                 "transaction_paid_date": "field_827",
             },
         },

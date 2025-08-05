@@ -69,7 +69,7 @@ def create_knack_payload(payment_status, today_date, knack_app):
     knack_fields = FIELD_MAPS.get(knack_app).get(knack_env).get("TRANSACTIONS")
     return json.dumps(
         {
-            knack_fields["payment_status"]: payment_status_map[payment_status],
+            knack_fields["transaction_status"]: payment_status_map[payment_status],
             knack_fields["transaction_paid_date"]: today_date,
         }
     )
@@ -123,7 +123,7 @@ def get_knack_refund_payload(
 
     return json.dumps(
         {
-            knack_fields["payment_status"]: payment_status_map[payment_status],
+            knack_fields["transaction_status"]: payment_status_map[payment_status],
             knack_fields["invoice_id"]: knack_invoice,
             # if it is a refund, store negative amount
             knack_fields["total_amount"]: f"-{payment_amount}",
