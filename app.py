@@ -39,7 +39,7 @@ headers = {
 app = Flask(__name__)
 
 log_handler = CloudWatchLogHandler(
-    log_group_name=f"citybase_{flask_env}", log_stream_name="postback_stream"
+    log_group_name=f"/dts/citybase/postback/{flask_env}", log_stream_name=datetime.now().strftime("%Y-%m-%d")
 )
 logging.basicConfig(level=logging.INFO)
 logging.getLogger().addHandler(log_handler)
