@@ -126,8 +126,7 @@ def get_knack_refund_payload(
     )
     record_response.raise_for_status()
     record_data = record_response.json()
-    app.logger.info(f"Parent refund record data from knack")
-    app.logger.info(record_data)
+    app.logger.info(f"Complete transaction refund record data from knack: {record_data}")
 
     # the connection record id is in the format "field_3326": "<span class=\"638e58b31370e500241c3388\">486</span>",
     # using the raw form of the field to get the identifier.
@@ -194,8 +193,7 @@ def update_parent_reservation(knack_record_id, today_date):
         headers=headers,
     )
     record_data = record_response.json()
-    app.logger.info(f"Parent record data from knack")
-    app.logger.info(record_data)
+    app.logger.info(f"Parent record data from knack: {record_data}")
     if record_data[FIELD_MAPS["ots_connection_field"]]:
         # get parent record id
         parent_record_response = record_data[
@@ -214,7 +212,7 @@ def update_parent_reservation(knack_record_id, today_date):
             headers=headers,
             data=ots_payload,
         )
-        app.logger.info("Parent update response: " + str(parent_update_response))
+        app.logger.info(f"Update parent reservation response: {parent_update_response}")
     if record_data[FIELD_MAPS["lpb_connection_field"]]:
         # get parent record id
         parent_record_response = record_data[
@@ -233,7 +231,7 @@ def update_parent_reservation(knack_record_id, today_date):
             headers=headers,
             data=lpb_payload,
         )
-        app.logger.info("Parent update response: " + str(parent_update_response))
+        app.logger.info(f"Update parent reservation response: {parent_update_response}")
 
 
 @app.route("/")
@@ -254,8 +252,7 @@ def internal_server_error(e):
 def handle_postback():
     today_date = datetime.now().strftime("%m/%d/%Y %H:%M")
     citybase_data = request.get_json()
-    app.logger.info(f"New POST with payload: ")
-    app.logger.info(citybase_data)
+    app.logger.info(f"New POST with payload: {citybase_data}")
     knack_record_id = get_knack_record_id(citybase_data)
     # if knack_record_id is not a string, then it is an error tuple, for example ("Missing custom attributes", 400)
     if not isinstance(knack_record_id, str):
@@ -276,8 +273,7 @@ def handle_postback():
     message_payload = create_message_json(
         citybase_id, today_date, knack_invoice, payment_status
     )
-    app.logger.info("Updating Knack messages table with payload: ")
-    app.logger.info(message_payload)
+    app.logger.info(f"Updating Knack messages table with payload: {message_payload}")
     r = requests.post(
         f"{KNACK_API_URL}{MESSAGES_OBJECT_ID}/records/",
         headers=headers,
@@ -288,7 +284,6 @@ def handle_postback():
 
     # if a refund, post a new record to knack transactions table
     if payment_status == "refunded":
-        app.logger.info("Transaction is refund, creating new transaction record...")
         knack_payload = get_knack_refund_payload(
             payment_status,
             payment_amount,
@@ -296,25 +291,27 @@ def handle_postback():
             today_date,
             knack_record_id,
         )
+        app.logger.info(f"Transaction is refund, creating new transaction record: {knack_payload}")
         knack_response = requests.post(
             f"{KNACK_API_URL}{TRANSACTIONS_OBJECT_ID}/records/",
             headers=headers,
             data=knack_payload,
         )
-        app.logger.info(f"refund update response {knack_response}")
+        app.logger.info(f"Refund transaction update response {knack_response}")
     # otherwise, update existing record payment status on transactions table
     else:
-        app.logger.info("Updating existing transaction record...")
+        app.logger.info("Updating existing transaction record")
         knack_payload = get_knack_payload(payment_status, today_date)
         if payment_status == "successful":
             # if this was a successful payment we also need to update reservation record
-            app.logger.info("Updating parent reservation...")
+            app.logger.info("Updating parent reservation")
             update_parent_reservation(knack_record_id, today_date)
         knack_response = requests.put(
             f"{KNACK_API_URL}{TRANSACTIONS_OBJECT_ID}/records/{knack_record_id}",
             headers=headers,
             data=knack_payload,
         )
+        app.logger.info(f"Successful payment transaction update response {knack_response}")
     if knack_response.status_code == 200:
         return "Payment status updated", knack_response.status_code
     # if unsuccessful, return knack's status response as response
