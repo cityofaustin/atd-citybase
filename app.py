@@ -173,7 +173,7 @@ def update_parent_reservation(today_date, parent_record_id, banner_type, headers
         ots_payload = json.dumps(
             {
                 knack_fields["ots_application_status"]: "Approved",
-                knack_fields["ots_paid_status"]: True,
+                knack_fields["ots_payment_received"]: True,
                 knack_fields["ots_payment_date"]: today_date,
             }
         )
@@ -188,7 +188,7 @@ def update_parent_reservation(today_date, parent_record_id, banner_type, headers
         lpb_payload = json.dumps(
             {
                 knack_fields["lpb_application_status"]: "Approved",
-                knack_fields["lpb_paid_status"]: True,
+                knack_fields["lpb_payment_received"]: True,
                 knack_fields["lpb_payment_date"]: today_date,
             }
         )

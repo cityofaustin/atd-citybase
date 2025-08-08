@@ -25,12 +25,12 @@ FIELD_MAPS = {
             },
             "OVER_THE_STREET": {
                 "ots_application_status": "field_2862",
-                "ots_paid_status": "field_2858",  #  THIS IS CALLED PAYMENT RECEIVED
+                "ots_payment_received": "field_2858",
                 "ots_payment_date": "field_3144",
             },
             "LAMPPOST": {
                 "lpb_application_status": "field_2796",
-                "lpb_paid_status": "field_2808",  #  THIS IS CALLED PAYMENT RECEIVED
+                "lpb_payment_received": "field_2808",
                 "lpb_payment_date": "field_2809",
             },
         },
@@ -59,12 +59,12 @@ FIELD_MAPS = {
             },
             "OVER_THE_STREET": {
                 "ots_application_status": "field_2862",
-                "ots_paid_status": "field_2858",  #  THIS IS CALLED PAYMENT RECEIVED
+                "ots_payment_received": "field_2858",
                 "ots_payment_date": "field_3144",
             },
             "LAMPPOST": {
                 "lpb_application_status": "field_2796",
-                "lpb_paid_status": "field_2808",  #  THIS IS CALLED PAYMENT RECEIVED
+                "lpb_payment_received": "field_2808",
                 "lpb_payment_date": "field_2809",
             },
         },
