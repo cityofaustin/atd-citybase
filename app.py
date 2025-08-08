@@ -1,5 +1,7 @@
 from datetime import datetime
+import logging
 from flask import Flask, request
+from watchtower import CloudWatchLogHandler
 import requests
 import json
 import os
@@ -7,6 +9,10 @@ import os
 from utils.field_maps import FIELD_MAPS, REFUND_FIELDS
 
 KNACK_API_URL = "https://api.knack.com/v1/objects/"
+
+flask_env = os.getenv("FLASK_ENV")
+if not flask_env:
+    raise Exception("Missing defined environment variable")
 
 KNACK_APP_ID = os.getenv("KNACK_APP_ID")
 KNACK_API_KEY = os.getenv("KNACK_API_KEY")
@@ -31,6 +37,12 @@ headers = {
 
 
 app = Flask(__name__)
+
+log_handler = CloudWatchLogHandler(
+    log_group_name=f"/dts/citybase/postback/{flask_env}", log_stream_name=datetime.now().strftime("%Y-%m-%d")
+)
+logging.basicConfig(level=logging.INFO)
+logging.getLogger().addHandler(log_handler)
 
 
 def get_custom_attribute(custom_attributes, attribute_name):
@@ -114,6 +126,7 @@ def get_knack_refund_payload(
     )
     record_response.raise_for_status()
     record_data = record_response.json()
+    app.logger.info(f"Complete transaction refund record data from knack: {record_data}")
 
     # the connection record id is in the format "field_3326": "<span class=\"638e58b31370e500241c3388\">486</span>",
     # using the raw form of the field to get the identifier.
@@ -180,6 +193,7 @@ def update_parent_reservation(knack_record_id, today_date):
         headers=headers,
     )
     record_data = record_response.json()
+    app.logger.info(f"Parent record data from knack: {record_data}")
     if record_data[FIELD_MAPS["ots_connection_field"]]:
         # get parent record id
         parent_record_response = record_data[
@@ -198,7 +212,7 @@ def update_parent_reservation(knack_record_id, today_date):
             headers=headers,
             data=ots_payload,
         )
-        app.logger.info("Parent update response: " + str(parent_update_response))
+        app.logger.info(f"Update parent reservation response: {parent_update_response}")
     if record_data[FIELD_MAPS["lpb_connection_field"]]:
         # get parent record id
         parent_record_response = record_data[
@@ -217,19 +231,28 @@ def update_parent_reservation(knack_record_id, today_date):
             headers=headers,
             data=lpb_payload,
         )
-        app.logger.info("Parent update response: " + str(parent_update_response))
+        app.logger.info(f"Update parent reservation response: {parent_update_response}")
 
 
 @app.route("/")
 def index():
     now = datetime.now().isoformat()
+    app.logger.info(f"Healthcheck at {now}")
     return f"Austin Transportation Public Works Department Citybase healthcheck {now}"
+
+
+@app.errorhandler(500)
+def internal_server_error(e):
+    # Log the error with more context
+    app.logger.error(f"Internal Server Error: {e}", exc_info=True)
+    return "Internal server error", 500
 
 
 @app.route("/citybase_postback", methods=["POST"])
 def handle_postback():
     today_date = datetime.now().strftime("%m/%d/%Y %H:%M")
     citybase_data = request.get_json()
+    app.logger.info(f"New POST with payload: {citybase_data}")
     knack_record_id = get_knack_record_id(citybase_data)
     # if knack_record_id is not a string, then it is an error tuple, for example ("Missing custom attributes", 400)
     if not isinstance(knack_record_id, str):
@@ -237,7 +260,7 @@ def handle_postback():
         return knack_record_id
 
     knack_invoice = get_knack_invoice(citybase_data)
-    # if knack_record_id is not a string, then it is an error tuple
+    # if knack_invoice is not a string, then it is an error tuple
     if not isinstance(knack_invoice, str):
         # returns an error message and error code
         return knack_invoice
@@ -245,21 +268,22 @@ def handle_postback():
     payment_status = citybase_data["data"]["status"]
     payment_amount = citybase_data["data"]["total_amount"]
     citybase_id = citybase_data["data"]["id"]
+    app.logger.info(f"Payment status: {payment_status}, invoice number: {knack_invoice}")
 
     message_payload = create_message_json(
         citybase_id, today_date, knack_invoice, payment_status
     )
-    app.logger.info("Updating Knack messages table...")
+    app.logger.info(f"Updating Knack messages table with payload: {message_payload}")
     r = requests.post(
         f"{KNACK_API_URL}{MESSAGES_OBJECT_ID}/records/",
         headers=headers,
         data=message_payload,
     )
+    app.logger.info(f"Response from updating messages table: {r}")
     r.raise_for_status()
 
     # if a refund, post a new record to knack transactions table
     if payment_status == "refunded":
-        app.logger.info("Transaction is refund, creating new transaction record...")
         knack_payload = get_knack_refund_payload(
             payment_status,
             payment_amount,
@@ -267,23 +291,27 @@ def handle_postback():
             today_date,
             knack_record_id,
         )
+        app.logger.info(f"Transaction is refund, creating new transaction record: {knack_payload}")
         knack_response = requests.post(
             f"{KNACK_API_URL}{TRANSACTIONS_OBJECT_ID}/records/",
             headers=headers,
             data=knack_payload,
         )
+        app.logger.info(f"Refund transaction update response {knack_response}")
     # otherwise, update existing record payment status on transactions table
     else:
-        app.logger.info("Updating existing transaction record...")
+        app.logger.info("Updating existing transaction record")
         knack_payload = get_knack_payload(payment_status, today_date)
         if payment_status == "successful":
             # if this was a successful payment we also need to update reservation record
+            app.logger.info("Updating parent reservation")
             update_parent_reservation(knack_record_id, today_date)
         knack_response = requests.put(
             f"{KNACK_API_URL}{TRANSACTIONS_OBJECT_ID}/records/{knack_record_id}",
             headers=headers,
             data=knack_payload,
         )
+        app.logger.info(f"Successful payment transaction update response {knack_response}")
     if knack_response.status_code == 200:
         return "Payment status updated", knack_response.status_code
     # if unsuccessful, return knack's status response as response
@@ -291,5 +319,5 @@ def handle_postback():
 
 
 if __name__ == "__main__":
-    # todo: remember to turn off debug!
-    app.run(debug=True, host="0.0.0.0")
+    use_debug = flask_env == "development"
+    app.run(debug=use_debug, host="0.0.0.0")
