@@ -10,9 +10,20 @@ services:
       - .:/root/app
     env_file:
       - .env
+
   citybase-gunicorn-app:
     profiles: [production, staging, uat]
-    command: ["gunicorn", "--threads", "4", "--workers", "2", "--bind", "0.0.0.0:5000", "app:app"]
+    command:
+      [
+        "gunicorn",
+        "--threads",
+        "4",
+        "--workers",
+        "2",
+        "--bind",
+        "0.0.0.0:5000",
+        "app:app",
+      ]
     working_dir: /root/app
     build: .
     restart: unless-stopped
