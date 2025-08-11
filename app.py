@@ -38,8 +38,8 @@ app = Flask(__name__)
 log_handler = CloudWatchLogHandler(
     log_group_name=f"/dts/citybase/postback/{flask_env}", log_stream_name=datetime.now().strftime("%Y-%m-%d")
 )
-# logging.basicConfig(level=logging.INFO)
-# logging.getLogger().addHandler(log_handler)
+logging.basicConfig(level=logging.INFO)
+logging.getLogger().addHandler(log_handler)
 
 def unpack_custom_attributes(custom_attributes_list):
     """
@@ -53,6 +53,7 @@ def unpack_custom_attributes(custom_attributes_list):
 
 
 def get_object_ids(knack_app):
+    """Returns messages table and transactions table object_ids based on knack app input"""
     if knack_app == "STREET_BANNER":
         return STREET_BANNER_MESSAGES_OBJECT_ID, STREET_BANNER_TRANSACTIONS_OBJECT_ID
     if knack_app == "SMART_MOBILITY":
