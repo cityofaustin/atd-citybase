@@ -14,7 +14,6 @@ services:
     profiles: [production, staging, uat]
     command: ["gunicorn", "--threads", "4", "--workers", "2", "--bind", "0.0.0.0:5000", "app:app"]
     working_dir: /root/app
-    container_name: citybase-gunicorn-app
     build: .
     restart: unless-stopped
     ports:
