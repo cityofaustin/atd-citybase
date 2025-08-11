@@ -170,6 +170,7 @@ docker compose --profile production up --detach
 ### Branching and promotion rules
 
 - **`main` is the source of truth**: It should always be ahead of `uat` and `production` in commit history.
-- **Environment branches are deployment targets**: Do not merge code into `uat` or `production` without first sending that code through `main`. These deployment targets may accumulate merge commits which creep ahead of `main` and this is fine, or you can merge them back into `main` if you'd prefer to manage not have the deployment targets have any commits that are not in the upstream integration branch.
+- **Environment branches are deployment targets**: Do not merge code into `uat` or `production` without first sending that code through `main`. These deployment targets may accumulate merge commits which creep ahead of `main` and this is fine, or you can merge them back into `main` if you'd prefer to ensure that the deployment targets don't have any commits that are not in the upstream integration branch.
+
 - **Promotions are merges from left to right**: `main` → `uat` (when needed) → `production` (after approval). For hotfixes, merge the fix into `main`, then promote forward.
 - **Service restarts**: After pulling on the bastion, restart the stack explicitly: `docker compose down` then `docker compose --profile {environment} up --detach`.
