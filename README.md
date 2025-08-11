@@ -164,7 +164,7 @@ docker compose down
 docker compose --profile production up --detach
 ```
 
-- **Automation today**: None. Manual `git pull` when you want to refresh staging.
+- **Automation today**: None. Manual `git pull` when you want to refresh production.
 - **Could be automated**: CI/CD pipeline that deploys `production` on push.
 
 ### Branching and promotion rules
