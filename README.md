@@ -113,7 +113,7 @@ docker compose down
 docker compose --profile staging up --detach
 ```
 
-- **Automation today**: None. Manual `git pull` when you want to refresh staging.
+- **Automation in place**: None. Manual `git pull` when you want to refresh staging.
 - **Could be automated**: Add CI to auto-deploy on push to `main` (e.g., GitHub Action/Webhook that runs `git pull` and restarts the stack on the bastion).
 
 ### UAT (User Acceptance Testing)
@@ -139,7 +139,7 @@ docker compose down
 docker compose --profile uat up --detach
 ```
 
-- **Automation today**: None (by design). Dev lead decides when to sync `main` into `uat` to align with upstream Citybase coordination.
+- **Automation in place**: None (by design). Dev lead decides when to sync `main` into `uat` to align with upstream Citybase coordination.
 - **Could be automated**: CI with a manual approval step to deploy `uat` on demand.
 
 ### Production
@@ -164,8 +164,8 @@ docker compose down
 docker compose --profile production up --detach
 ```
 
-- **Automation today**: None.
-- **Could be automated**: CI/CD pipeline that deploys `production` on push, optionally gated by required reviews and manual approvals.
+- **Automation today**: None. Manual `git pull` when you want to refresh staging.
+- **Could be automated**: CI/CD pipeline that deploys `production` on push.
 
 ### Branching and promotion rules
 
