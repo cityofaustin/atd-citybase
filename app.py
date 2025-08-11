@@ -59,13 +59,14 @@ def get_object_ids(knack_app):
     if knack_app == "SMART_MOBILITY":
         return SMART_MOBILITY_MESSAGES_OBJECT_ID, SMART_MOBILITY_TRANSACTIONS_OBJECT_ID
     else:
-        raise ValueError(f"Incorrect knack app in payload {knack_app}, must be STREET_BANNER or SMART_MOBILITY")
+        raise ValueError(f"Incorrect knack app {knack_app}, must be STREET_BANNER or SMART_MOBILITY")
 
 
 def create_knack_payload(payment_status, today_date, knack_app):
     """
     :param payment_status: info from citybase payload
     :param today_date: mm/dd/YYYY H:M datetime string
+    :param knack_app: SMART_MOBILITY or STREET_BANNER to select correct fields
     :return: json object to send along with PUT call to knack
     """
     knack_fields = FIELD_MAPS.get(knack_app).get(knack_env).get("TRANSACTIONS")
@@ -92,7 +93,10 @@ def get_knack_refund_payload(
     :param payment_amount: string amount from citybase payload
     :param knack_invoice: info from citybase payload
     :param today_date: mm/dd/YYYY H:M datetime string
-    :param knack_record_id:
+    :param knack_record_id: transaction record id
+    :param headers: headers for knack_app to complete request
+    :param transactions_object_id: object_id to use in get request
+    :param knack_app: SMART_MOBILITY or STREET_BANNER to select correct fields
     :return: json object to insert into transactions table in knack
     """
 
@@ -148,6 +152,7 @@ def create_message_json(citybase_id, today_date, knack_invoice, payment_status, 
     :param today_date: mm/dd/YYYY H:M datetime string
     :param knack_invoice: info from citybase payload
     :param payment_status: info from citybase payload
+    :param knack_app: SMART_MOBILITY or STREET_BANNER to select correct fields
     :return: json object to insert in knack citybase_messages table
     """
     knack_fields = FIELD_MAPS.get(knack_app).get(knack_env).get("MESSAGES")
@@ -173,7 +178,7 @@ def update_parent_reservation(today_date, parent_record_id, banner_type, headers
         knack_fields = FIELD_MAPS.get("STREET_BANNER").get(knack_env).get("OVER_THE_STREET")
         ots_payload = json.dumps(
             {
-                knack_fields["ots_application_status"]: "Approved",
+                knack_fields["ots_application_status"]: "Approved", # no application status update for SMO
                 knack_fields["ots_payment_received"]: True,
                 knack_fields["ots_payment_date"]: today_date,
             }
