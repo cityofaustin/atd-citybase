@@ -77,11 +77,11 @@ In the root of the git repository, please:
 
 - `docker compose --profile [development/staging/uat/production] build` will build the docker image for the services.
 - Copy `env-template` to `.env` (which is git-ignored) and edit it to contain the desired environment variables. See 1PW entry "Citybase ENV"
-- Use `docker compose up -d` with the `--profile` flag to start the application:
-  - For **development**: `docker compose --profile development up -d`
-  - For **staging**: `docker compose --profile staging up -d`
-  - For **uat**: `docker compose --profile uat up -d`
-  - For **production**: `docker compose --profile production up -d`
+- Use `docker compose up --detach` with the `--profile` flag to start the application:
+  - For **development**: `docker compose --profile development up --detach`
+  - For **staging**: `docker compose --profile staging up --detach`
+  - For **uat**: `docker compose --profile uat up --detach`
+  - For **production**: `docker compose --profile production up --detach`
 - Edit files in place outside of the docker instance as usual when developing
 
 ### Logging
@@ -109,7 +109,8 @@ This project moves through four phases: development → staging → UAT → prod
 ```sh
 cd /srv/atd-citybase-staging
 git pull
-docker compose --profile staging up -d
+docker compose down
+docker compose --profile staging up --detach
 ```
 
 - **Automation today**: None. Manual `git pull` when you want to refresh staging.
@@ -134,7 +135,8 @@ git push origin uat
 # On the bastion host
 cd /srv/atd-citybase-uat
 git pull
-docker compose --profile staging up -d
+docker compose down
+docker compose --profile uat up --detach
 ```
 
 - **Automation today**: None (by design). Dev lead decides when to sync `main` into `uat` to align with upstream Citybase coordination.
@@ -158,7 +160,8 @@ git push origin production
 # On the bastion host
 cd /srv/atd-citybase-production
 git pull
-docker compose --profile production up -d
+docker compose down
+docker compose --profile production up --detach
 ```
 
 - **Automation today**: None.
@@ -169,4 +172,4 @@ docker compose --profile production up -d
 - **`main` is the source of truth**: It should always be ahead of `uat` and `production` in commit history.
 - **Environment branches are deployment targets**: Do not merge code into `uat` or `production` without first sending that code through `main`. These deployment targets may accumulate merge commits which creep ahead of `main` and this is fine, or you can merge them back into `main` if you'd prefer to manage not have the deployment targets have any commits that are not in the upstream integration branch.
 - **Promotions are merges from left to right**: `main` → `uat` (when needed) → `production` (after approval). For hotfixes, merge the fix into `main`, then promote forward.
-- **Service restarts**: After pulling on the bastion, restart the stack with the correct `docker compose --profile {environment} up -d` command for that environment.
+- **Service restarts**: After pulling on the bastion, restart the stack explicitly: `docker compose down` then `docker compose --profile {environment} up --detach`.
