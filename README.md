@@ -71,18 +71,106 @@ Example citybase payload
 
 ## Development
 
-The `docker-compose.yml` in this repository uses [profiles](https://docs.docker.com/compose/profiles/) to define separate application configurations for `development`, `staging`, and `production`. You must specify which profile to use when starting the application.
+The `docker-compose.yml` in this repository uses [profiles](https://docs.docker.com/compose/profiles/) to define separate application configurations for `development`, `staging`, `uat`, and `production`. You must specify which profile to use when starting the application.
 
 In the root of the git repository, please:
 
-- `docker compose --profile [development/staging/production] build` will build the docker image for the services.
+- `docker compose --profile [development/staging/uat/production] build` will build the docker image for the services.
 - Copy `env-template` to `.env` (which is git-ignored) and edit it to contain the desired environment variables. See 1PW entry "Citybase ENV"
-- Use `docker compose up -d` with the `--profile` flag to start the application:
-  - For **development**: `docker compose --profile development up -d`
-  - For **staging**: `docker compose --profile staging up -d`
-  - For **production**: `docker compose --profile production up -d`
+- Use `docker compose up --detach` with the `--profile` flag to start the application:
+  - For **development**: `docker compose --profile development up --detach`
+  - For **staging**: `docker compose --profile staging up --detach`
+  - For **uat**: `docker compose --profile uat up --detach`
+  - For **production**: `docker compose --profile production up --detach`
 - Edit files in place outside of the docker instance as usual when developing
 
 ### Logging
 
 Logs that are emitted are also sent to AWS Cloudwatch using [watchtower/](https://pypi.org/project/watchtower/), the log groups are named based on the environment variable used when spinning up the stack, `/dts/citybase/postback/{knack_env}`. Log streams are named based on the date in the YYYY/mm/dd format. Development logs have a 3 day retention rate, production and staging logs never expire.
+
+## Deployment lifecycle
+
+This project moves through four phases: development → staging → UAT → production. The `main` branch is the integration branch and should always be the most up to date (ahead of `uat` and `production`). Feature work happens on short‑lived branches and is merged into `main` via pull request.
+
+### Development
+
+- **Where it runs**: Locally on your computer, or in a personal checkout under your home directory on the bastion.
+- **Branching**: Create a feature branch from `main` (for example, `developer-name/short-description`). Open a PR to merge into `main` when ready.
+- **What moves forward**: Merging into `main` is the signal that work is ready to be exercised on staging.
+
+### Staging
+
+- **Host/Path**: Bastion at `/srv/atd-citybase-staging`
+- **Branch**: `main`
+- **URL**: [`https://citybase-staging.austinmobility.io`](https://citybase-staging.austinmobility.io)
+- **Purpose**: Running the latest code in `main`. Used for internal verification before UAT.
+- **How to update**: SSH to the bastion, then pull and restart the service.
+
+```sh
+cd /srv/atd-citybase-staging
+git pull
+docker compose --profile staging down
+docker compose --profile staging up --detach
+```
+
+- **Automation in place**: None. Manual `git pull` when you want to refresh staging.
+- **Could be automated**: Add CI to auto-deploy on push to `main` (e.g., GitHub Action/Webhook that runs `git pull` and restarts the stack on the bastion).
+
+### UAT (User Acceptance Testing)
+
+- **Host/Path**: Bastion at `/srv/atd-citybase-uat`
+- **Branch**: `uat`
+- **URL**: [`https://citybase-uat.austinmobility.io`](https://citybase-uat.austinmobility.io)
+- **Purpose**: Time-boxed snapshots of `main` for stakeholder testing. Sync is deliberate and controlled by the dev/project lead.
+- **How to create/update a UAT snapshot**:
+  - Ensure `uat` is brought up to the current `main`. Merge `main` → `uat` in GitHub or locally.
+  - On the bastion, pull and restart:
+
+```sh
+# In your local clone or via GitHub PR
+git checkout uat
+git merge main
+git push origin uat
+
+# On the bastion host
+cd /srv/atd-citybase-uat
+git pull
+docker compose --profile uat down
+docker compose --profile uat up --detach
+```
+
+- **Automation in place**: None (by design). Dev lead decides when to sync `main` into `uat` to align with upstream Citybase coordination.
+- **Could be automated**: CI with a manual approval step to deploy `uat` on demand.
+
+### Production
+
+- **Host/Path**: Bastion at `/srv/atd-citybase-production`
+- **Branch**: `production`
+- **URL**: [`https://citybase.austinmobility.io`](https://citybase.austinmobility.io)
+- **Purpose**: Live service.
+- **Promotion**: After UAT sign‑off, merge the approved code into `production` (typically `main` → `production`, or `uat` → `production` if you used `uat` as the exact release snapshot).
+- **How to deploy**:
+
+```sh
+# In your local clone or via GitHub PR
+git checkout production
+git merge main   # or: git merge uat
+git push origin production
+
+# On the bastion host
+cd /srv/atd-citybase-production
+git pull
+docker compose --profile production down
+docker compose --profile production up --detach
+```
+
+- **Automation today**: None. Manual `git pull` when you want to refresh production.
+- **Could be automated**: CI/CD pipeline that deploys `production` on push.
+
+### Branching and promotion rules
+
+- **`main` is the source of truth**: It should always be ahead of `uat` and `production` in commit history.
+- **Environment branches are deployment targets**: Do not merge code into `uat` or `production` without first sending that code through `main`. These deployment targets may accumulate merge commits which creep ahead of `main` and this is fine, or you can merge them back into `main` if you'd prefer to ensure that the deployment targets don't have any commits that are not in the upstream integration branch.
+
+- **Promotions are merges from left to right**: `main` → `uat` (when needed) → `production` (after approval). For hotfixes, merge the fix into `main`, then promote forward.
+- **Service restarts**: After pulling on the bastion, restart the stack explicitly: `docker compose --profile {environment} down` then `docker compose --profile {environment} up --detach`.
