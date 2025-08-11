@@ -109,7 +109,7 @@ This project moves through four phases: development → staging → UAT → prod
 ```sh
 cd /srv/atd-citybase-staging
 git pull
-docker compose down
+docker compose --profile staging down
 docker compose --profile staging up --detach
 ```
 
@@ -135,7 +135,7 @@ git push origin uat
 # On the bastion host
 cd /srv/atd-citybase-uat
 git pull
-docker compose down
+docker compose --profile uat down
 docker compose --profile uat up --detach
 ```
 
@@ -160,7 +160,7 @@ git push origin production
 # On the bastion host
 cd /srv/atd-citybase-production
 git pull
-docker compose down
+docker compose --profile production down
 docker compose --profile production up --detach
 ```
 
@@ -173,4 +173,4 @@ docker compose --profile production up --detach
 - **Environment branches are deployment targets**: Do not merge code into `uat` or `production` without first sending that code through `main`. These deployment targets may accumulate merge commits which creep ahead of `main` and this is fine, or you can merge them back into `main` if you'd prefer to ensure that the deployment targets don't have any commits that are not in the upstream integration branch.
 
 - **Promotions are merges from left to right**: `main` → `uat` (when needed) → `production` (after approval). For hotfixes, merge the fix into `main`, then promote forward.
-- **Service restarts**: After pulling on the bastion, restart the stack explicitly: `docker compose down` then `docker compose --profile {environment} up --detach`.
+- **Service restarts**: After pulling on the bastion, restart the stack explicitly: `docker compose --profile {environment} down` then `docker compose --profile {environment} up --detach`.
