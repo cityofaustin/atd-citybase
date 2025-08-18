@@ -177,7 +177,9 @@ def update_parent_reservation(today_date, parent_record_id, banner_type, headers
         knack_fields = FIELD_MAPS.get("SMART_MOBILITY").get(knack_env).get("BLOCK_PARTY")
         nbp_payload = json.dumps(
             {
-                knack_fields["application_status"]: "Under Review", # confirm with Karo/Hanna
+                # as of right now, do not include an update for application status
+                # Hanna / Karo confirming with stakeholder
+                # knack_fields["application_status"]: "Under Review",
                 knack_fields["payment_received"]: True,
                 knack_fields["payment_date"]: today_date
             }
@@ -267,8 +269,8 @@ def handle_postback():
     app.logger.info(f"Response from updating messages table: {r}")
     r.raise_for_status()
 
-    # if a refund, post a new record to knack transactions table
-    if payment_status == "refunded":
+    # if a refund from Banners, post a new record to Street Banner knack transactions table
+    if payment_status == "refunded" and knack_app == "STREET_BANNER":
         knack_payload = get_knack_refund_payload(
             payment_status,
             payment_amount,
