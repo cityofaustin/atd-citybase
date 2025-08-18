@@ -91,6 +91,11 @@ FIELD_MAPS = {
                 "transaction_status": "field_826",
                 "transaction_paid_date": "field_827",
             },
+            "BLOCK_PARTY": {
+                "application_status": "field_842",
+                "payment_received": "field_845",
+                "payment_date": "field_844",
+            },
         },
         "UAT": {
             "TRANSACTION_REFUND": {
@@ -112,6 +117,11 @@ FIELD_MAPS = {
             "TRANSACTIONS": {
                 "transaction_status": "field_826",
                 "transaction_paid_date": "field_827",
+            },
+            "BLOCK_PARTY": {
+                "application_status": "field_842",
+                "payment_received": "field_845",
+                "payment_date": "field_844",
             },
         },
     },

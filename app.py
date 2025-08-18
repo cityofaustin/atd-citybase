@@ -23,7 +23,7 @@ SMART_MOBILITY_TRANSACTIONS_OBJECT_ID = "object_39"
 
 OTS_OBJECT_ID = "object_164"
 LPB_OBJECT_ID = "object_161"
-
+NBP_OBJECT_ID = "object_36"
 
 # map citybase payment statuses to knack options
 payment_status_map = {
@@ -168,17 +168,31 @@ def create_message_json(citybase_id, today_date, knack_invoice, payment_status, 
     )
 
 
-def update_parent_reservation(today_date, parent_record_id, banner_type, headers):
+def update_parent_reservation(today_date, parent_record_id, banner_type, headers, knack_app):
     """
     Checks banner_type and updates appropriate parent reservation record in knack
     Sets payment received status as TRUE, application as Approved and payment date as today
     """
-
+    if knack_app == "SMART_MOBILITY":
+        knack_fields = FIELD_MAPS.get("SMART_MOBILITY").get(knack_env).get("BLOCK_PARTY")
+        nbp_payload = json.dumps(
+            {
+                knack_fields["application_status"]: "Under Review", # confirm with Karo/Hanna
+                knack_fields["payment_received"]: True,
+                knack_fields["payment_date"]: today_date
+            }
+        )
+        parent_update_response = requests.put(
+            f"{KNACK_API_URL}{NBP_OBJECT_ID}/records/{parent_record_id}",
+            headers=headers,
+            data=nbp_payload,
+        )
+        app.logger.info(f"Update parent reservation response: {parent_update_response}")
     if banner_type == "OVER_THE_STREET":
         knack_fields = FIELD_MAPS.get("STREET_BANNER").get(knack_env).get("OVER_THE_STREET")
         ots_payload = json.dumps(
             {
-                knack_fields["ots_application_status"]: "Approved", # no application status update for SMO
+                knack_fields["ots_application_status"]: "Approved",
                 knack_fields["ots_payment_received"]: True,
                 knack_fields["ots_payment_date"]: today_date,
             }
@@ -276,10 +290,10 @@ def handle_postback():
     else:
         app.logger.info("Updating existing transaction record...")
         knack_payload = create_knack_payload(payment_status, today_date, knack_app)
-        if payment_status == "successful" and knack_app == "STREET_BANNER":
+        if payment_status == "successful":
             # if this was a successful payment we also need to update reservation record
             app.logger.info("Updating parent reservation")
-            update_parent_reservation(today_date, parent_record_id, banner_type, headers)
+            update_parent_reservation(today_date, parent_record_id, banner_type, headers, knack_app)
         knack_response = requests.put(
             f"{KNACK_API_URL}{transactions_object_id}/records/{knack_record_id}",
             headers=headers,
