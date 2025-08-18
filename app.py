@@ -253,8 +253,10 @@ def handle_postback():
     payment_amount = citybase_data["data"]["total_amount"]
     citybase_id = citybase_data["data"]["id"]
 
+    app.logger.info(custom_attributes)
     headers = knack_headers(knack_app)
     messages_object_id, transactions_object_id = get_object_ids(knack_app)
+    app.logger.info("object ids: ", messages_object_id, transactions_object_id)
 
     # update the messages table
     message_payload = create_message_json(
