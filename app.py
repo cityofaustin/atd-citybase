@@ -244,11 +244,11 @@ def handle_postback():
     # information from citybase payload
     app.logger.info(f"New POST with payload: {citybase_data}")
     custom_attributes = unpack_custom_attributes(citybase_data["data"]["custom_attributes"])
-    knack_record_id = custom_attributes["knack_record_id"]
-    knack_invoice = custom_attributes["invoice_number"]
-    knack_app = custom_attributes["knack_app"]
-    banner_type = custom_attributes["banner_type"] if knack_app == "STREET_BANNER" else None
-    parent_record_id = custom_attributes["parent_record_id"]
+    knack_record_id = custom_attributes.get("knack_record_id")
+    knack_invoice = custom_attributes.get("invoice_number")
+    knack_app = custom_attributes.get("knack_app")
+    banner_type = custom_attributes.get("banner_type") if knack_app == "STREET_BANNER" else None
+    parent_record_id = custom_attributes.get("parent_record_id")
     payment_status = citybase_data["data"]["status"]
     payment_amount = citybase_data["data"]["total_amount"]
     citybase_id = citybase_data["data"]["id"]
