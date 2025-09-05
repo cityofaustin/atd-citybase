@@ -70,7 +70,7 @@ def create_knack_payload(payment_status, today_date, knack_app):
     :return: json object to send along with PUT call to knack
     """
     knack_fields = FIELD_MAPS.get(knack_app).get(knack_env).get("TRANSACTIONS")
-    return json.dumps(
+    return (
         {
             knack_fields["transaction_status"]: payment_status_map[payment_status],
             knack_fields["transaction_paid_date"]: today_date,
@@ -126,7 +126,7 @@ def get_knack_refund_payload(
     except IndexError:
         ots_connection_id = None
 
-    return json.dumps(
+    return (
         {
             knack_fields["transaction_status"]: payment_status_map[payment_status],
             knack_fields["invoice_id"]: knack_invoice,
@@ -157,7 +157,7 @@ def create_message_json(citybase_id, today_date, knack_invoice, payment_status, 
     """
     knack_fields = FIELD_MAPS.get(knack_app).get(knack_env).get("MESSAGES")
 
-    return json.dumps(
+    return (
         {
             knack_fields["messages_invoice_id"]: knack_invoice,
             knack_fields["messages_connected_invoice"]: knack_invoice,
@@ -175,7 +175,7 @@ def update_parent_reservation(today_date, parent_record_id, banner_type, headers
     """
     if knack_app == "SMART_MOBILITY":
         knack_fields = FIELD_MAPS.get("SMART_MOBILITY").get(knack_env).get("BLOCK_PARTY")
-        nbp_payload = json.dumps(
+        nbp_payload = (
             {
                 # as of right now, do not include an update for application status
                 # Hanna / Karo confirming with stakeholder
@@ -187,12 +187,12 @@ def update_parent_reservation(today_date, parent_record_id, banner_type, headers
         parent_update_response = requests.put(
             f"{KNACK_API_URL}{NBP_OBJECT_ID}/records/{parent_record_id}",
             headers=headers,
-            data=nbp_payload,
+            json=nbp_payload,
         )
         app.logger.info(f"Update parent reservation response: {parent_update_response}")
     if banner_type == "OVER_THE_STREET":
         knack_fields = FIELD_MAPS.get("STREET_BANNER").get(knack_env).get("OVER_THE_STREET")
-        ots_payload = json.dumps(
+        ots_payload = (
             {
                 knack_fields["ots_application_status"]: "Approved",
                 knack_fields["ots_payment_received"]: True,
@@ -202,12 +202,12 @@ def update_parent_reservation(today_date, parent_record_id, banner_type, headers
         parent_update_response = requests.put(
             f"{KNACK_API_URL}{OTS_OBJECT_ID}/records/{parent_record_id}",
             headers=headers,
-            data=ots_payload,
+            json=ots_payload,
         )
         app.logger.info(f"Update parent reservation response: {parent_update_response}")
     elif banner_type == "LAMPPOST":
         knack_fields = FIELD_MAPS.get("STREET_BANNER").get(knack_env).get("LAMPPOST")
-        lpb_payload = json.dumps(
+        lpb_payload = (
             {
                 knack_fields["lpb_application_status"]: "Approved",
                 knack_fields["lpb_payment_received"]: True,
@@ -217,7 +217,7 @@ def update_parent_reservation(today_date, parent_record_id, banner_type, headers
         parent_update_response = requests.put(
             f"{KNACK_API_URL}{LPB_OBJECT_ID}/records/{parent_record_id}",
             headers=headers,
-            data=lpb_payload,
+            json=lpb_payload,
         )
         app.logger.info(f"Update parent reservation response: {parent_update_response}")
 
@@ -264,7 +264,7 @@ def handle_postback():
     r = requests.post(
         f"{KNACK_API_URL}{messages_object_id}/records/",
         headers=headers,
-        data=message_payload,
+        json=message_payload,
     )
     app.logger.info(f"Response from updating messages table: {r}")
     r.raise_for_status()
@@ -285,7 +285,7 @@ def handle_postback():
         knack_response = requests.post(
             f"{KNACK_API_URL}{transactions_object_id}/records/",
             headers=headers,
-            data=knack_payload,
+            json=knack_payload,
         )
         app.logger.info(f"Refund transaction update response {knack_response}")
     # otherwise, update existing record payment status on transactions table
@@ -299,12 +299,13 @@ def handle_postback():
         knack_response = requests.put(
             f"{KNACK_API_URL}{transactions_object_id}/records/{knack_record_id}",
             headers=headers,
-            data=knack_payload,
+            json=knack_payload,
         )
         app.logger.info(f"Successful payment transaction update response {knack_response}")
     if knack_response.status_code == 200:
         return "Payment status updated", knack_response.status_code
     # if unsuccessful, return knack's status response as response
+    app.logger.info(f"Payment transaction update response {knack_response}")
     return knack_response.text, knack_response.status_code
 
 
