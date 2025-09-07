@@ -120,6 +120,7 @@ FIELD_MAPS = {
             "BLOCK_PARTY": {
                 "payment_received": "field_845",
                 "payment_date": "field_844",
+                "application_status": "field_704"
             },
         },
     },

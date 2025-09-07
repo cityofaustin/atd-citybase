@@ -177,9 +177,7 @@ def update_parent_reservation(today_date, parent_record_id, banner_type, headers
         knack_fields = FIELD_MAPS.get("SMART_MOBILITY").get(knack_env).get("BLOCK_PARTY")
         nbp_payload = (
             {
-                # as of right now, do not include an update for application status
-                # Hanna / Karo confirming with stakeholder
-                # knack_fields["application_status"]: "Under Review",
+                knack_fields["application_status"]: "Complete - Permit Issued",
                 knack_fields["payment_received"]: True,
                 knack_fields["payment_date"]: today_date
             }
