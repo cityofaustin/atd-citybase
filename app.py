@@ -1,6 +1,6 @@
 from datetime import datetime
 import logging
-from flask import Flask, request, Response
+from flask import Flask, request, jsonify
 from watchtower import CloudWatchLogHandler
 import requests
 import json
@@ -247,7 +247,7 @@ def index():
         "environment": flask_env,
         "timestamp": now,
     }
-    return Response(json.dumps(payload, indent=2) + "\n", mimetype="application/json")
+    return jsonify(payload)
 
 
 @app.errorhandler(500)
