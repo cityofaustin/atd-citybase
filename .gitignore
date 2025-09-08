@@ -12,3 +12,4 @@ venv/
 .idea/
 
 environment_variables.env
+.vscode
