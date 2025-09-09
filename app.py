@@ -1,6 +1,6 @@
 from datetime import datetime
 import logging
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from watchtower import CloudWatchLogHandler
 import requests
 import json
@@ -36,7 +36,8 @@ payment_status_map = {
 app = Flask(__name__)
 
 log_handler = CloudWatchLogHandler(
-    log_group_name=f"/dts/citybase/postback/{flask_env}", log_stream_name=datetime.now().strftime("%Y-%m-%d")
+    log_group_name=f"/dts/citybase/postback/{flask_env}",
+    log_stream_name=datetime.now().strftime("%Y-%m-%d"),
 )
 logging.basicConfig(level=logging.INFO)
 logging.getLogger().addHandler(log_handler)
@@ -108,7 +109,9 @@ def get_knack_refund_payload(
     )
     record_response.raise_for_status()
     record_data = record_response.json()
-    app.logger.info(f"Complete transaction refund record data from knack: {record_data}")
+    app.logger.info(
+        f"Complete transaction refund record data from knack: {record_data}"
+    )
 
     # the connection record id is in the format "field_3326": "<span class=\"638e58b31370e500241c3388\">486</span>",
     # using the raw form of the field to get the identifier.
@@ -224,7 +227,13 @@ def update_parent_reservation(today_date, parent_record_id, banner_type, headers
 def index():
     now = datetime.now().isoformat()
     app.logger.info(f"Healthcheck at {now}")
-    return f"Austin Transportation Public Works Department Citybase healthcheck {now}"
+    payload = {
+        "message": "Austin Transportation Public Works Department Citybase healthcheck",
+        "status": "OK",
+        "environment": flask_env,
+        "timestamp": now,
+    }
+    return jsonify(payload)
 
 
 @app.errorhandler(500)
@@ -250,6 +259,10 @@ def handle_postback():
     payment_status = citybase_data["data"]["status"]
     payment_amount = citybase_data["data"]["total_amount"]
     citybase_id = citybase_data["data"]["id"]
+    app.logger.info(
+        f"Payment status: {payment_status}, invoice number: {knack_invoice}"
+    )
+
 
     headers = knack_headers(knack_app)
     messages_object_id, transactions_object_id = get_object_ids(knack_app)
@@ -279,7 +292,9 @@ def handle_postback():
             transactions_object_id,
             knack_app
         )
-        app.logger.info(f"Transaction is refund, creating new transaction record: {knack_payload}")
+        app.logger.info(
+            f"Transaction is refund, creating new transaction record: {knack_payload}"
+        )
         knack_response = requests.post(
             f"{KNACK_API_URL}{transactions_object_id}/records/",
             headers=headers,
@@ -299,7 +314,9 @@ def handle_postback():
             headers=headers,
             json=knack_payload,
         )
-        app.logger.info(f"Successful payment transaction update response {knack_response}")
+        app.logger.info(
+            f"Successful payment transaction update response {knack_response}"
+        )
     if knack_response.status_code == 200:
         return "Payment status updated", knack_response.status_code
     # if unsuccessful, return knack's status response as response
