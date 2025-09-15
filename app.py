@@ -3,7 +3,6 @@ import logging
 from flask import Flask, request, jsonify
 from watchtower import CloudWatchLogHandler
 import requests
-import json
 import os
 
 from utils.field_maps import FIELD_MAPS
@@ -46,7 +45,7 @@ logging.getLogger().addHandler(log_handler)
 def unpack_custom_attributes(custom_attributes_list):
     """
     :param custom_attributes_list: list of dicts {"key":"key_name", "object":"value"} from citybase
-    :return: dictionary of "keyname":"value" pairs
+    :return: dictionary of "key_name":"value" pairs
     """
     custom_attributes = {}
     for a in custom_attributes_list:
@@ -223,9 +222,9 @@ def update_parent_reservation(
 @app.route("/")
 def index():
     now = datetime.now().isoformat()
-    app.logger.info(f"Healthcheck at {now}")
+    app.logger.info(f"Health check at {now}")
     payload = {
-        "message": "Austin Transportation Public Works Department Citybase healthcheck",
+        "message": "Austin Transportation Public Works Department Citybase health check",
         "status": "OK",
         "environment": flask_env,
         "timestamp": now,
