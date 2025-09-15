@@ -2,3 +2,4 @@ flask==3.1.*
 requests==2.32.*
 gunicorn==23.0.*
 watchtower==3.4.*
+jsonschema==4.25.*

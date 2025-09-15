@@ -4,9 +4,11 @@ from flask import Flask, request, jsonify
 from watchtower import CloudWatchLogHandler
 import requests
 import os
+from jsonschema import validate, ValidationError
 
 from utils.field_maps import FIELD_MAPS
 from utils.headers import knack_headers
+from utils.schemas import payment_reporting_schema
 
 KNACK_API_URL = "https://api.knack.com/v1/objects/"
 
@@ -243,7 +245,12 @@ def internal_server_error(e):
 def handle_postback():
     today_date = datetime.now().strftime("%m/%d/%Y %H:%M")
     citybase_data = request.get_json()
-    # TODO: validate citybase_data
+    try:
+        validate(citybase_data, payment_reporting_schema)
+    except ValidationError as e:
+        app.logger.error(f"Validation error: {e}")
+        return f"Validation error: {e.message}", 500
+
     # information from citybase payload
     app.logger.info(f"New POST with payload: {citybase_data}")
     custom_attributes = unpack_custom_attributes(

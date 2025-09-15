@@ -62,7 +62,7 @@ payment_reporting_schema = {
                     },
                 },
                 "credit_card": {
-                    "type": "object",
+                    "type": ["object", "null"],
                     "description": 'If payment_type is "credit_card" this object will contain card information. It will be null otherwise.',
                     "properties": {
                         "last_four": {
@@ -76,7 +76,7 @@ payment_reporting_schema = {
                     },
                 },
                 "bank_account": {
-                    "type": "object",
+                    "type": ["object", "null"],
                     "description": 'If payment_type is "check" this object will contain bank account information. It will be null otherwise.',
                     "properties": {
                         "routing_number": {
@@ -119,26 +119,35 @@ payment_reporting_schema = {
                     },
                     "required": ["id", "amount", "custom_attributes"],
                 },
-                "custom_attributes": {},
-                "required": [
-                    "id",
-                    "voidable",
-                    "refundable",
-                    "status",
-                    "amount",
-                    "total_amount",
-                    "service_fee",
-                    "total",
-                    "payment_type",
-                    "agency",
-                    "credit_card",
-                    "bank_account",
-                    "line_items",
-                    "created_at",
-                    "custom_attributes",
-                ],
+                "custom_attributes": {
+                    "type": "array",
+                    "description": "An array containing additional information not handled by other fields.",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "key": {
+                                "type": "string",
+                            },
+                            "value": {
+                                "type": "string",
+                            },
+                        },
+                    },
+                },
             },
+            "required": [
+                "id",
+                "status",
+                "amount",
+                "total_amount",
+                "service_fee",
+                "payment_type",
+                "agency",
+                "line_items",
+                "created_at",
+                "custom_attributes",
+            ],
         },
-        "required": ["data"],
     },
+    "required": ["data"],
 }
