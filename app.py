@@ -320,11 +320,11 @@ def handle_postback():
         )
     # otherwise, update existing record payment status on transactions table
     else:
-        app.logger.info("{citybase_id} - Updating existing transaction record")
+        app.logger.info(f"{citybase_id} - Updating existing transaction record")
         knack_payload = create_knack_payload(payment_status, today_date, knack_app)
         if payment_status == "successful":
             # if this was a successful payment we also need to update reservation record
-            app.logger.info("{citybase_id} - Updating parent reservation")
+            app.logger.info(f"{citybase_id} - Updating parent reservation")
             update_parent_reservation(
                 today_date, parent_record_id, banner_type, headers, knack_app
             )
