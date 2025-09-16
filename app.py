@@ -8,7 +8,7 @@ from jsonschema import validate, ValidationError
 
 from utils.field_maps import FIELD_MAPS
 from utils.headers import knack_headers
-from utils.schemas import payment_reporting_schema
+from utils.schemas import payment_reporting_schema, custom_attributes_schema
 
 KNACK_API_URL = "https://api.knack.com/v1/objects/"
 
@@ -245,17 +245,17 @@ def internal_server_error(e):
 def handle_postback():
     today_date = datetime.now().strftime("%m/%d/%Y %H:%M")
     citybase_data = request.get_json()
+    # information from citybase payload
+    app.logger.info(f"New POST with payload: {citybase_data}")
     try:
         validate(citybase_data, payment_reporting_schema)
     except ValidationError as e:
         app.logger.error(f"Validation error: {e}")
         return f"Validation error: {e.message}", 500
-
-    # information from citybase payload
-    app.logger.info(f"New POST with payload: {citybase_data}")
     custom_attributes = unpack_custom_attributes(
         citybase_data["data"]["custom_attributes"]
     )
+    validate(custom_attributes, custom_attributes_schema)
     knack_record_id = custom_attributes.get("knack_record_id")
     knack_invoice = custom_attributes.get("invoice_number")
     knack_app = custom_attributes.get("knack_app")

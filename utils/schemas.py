@@ -151,3 +151,15 @@ payment_reporting_schema = {
     },
     "required": ["data"],
 }
+
+custom_attributes_schema = {
+    "type": "object",
+    "properties": {
+        "knack_record_id": {"type": "string"},
+        "invoice_number": {"type": "string"},
+        "parent_record_id": {"type": "string"},
+        "banner_type": {"type": "string", "enum": ["LAMPPOST", "OVER_THE_STREET"]},
+        "knack_app": {"type": "string", "enum": ["STREET_BANNER", "SMART_MOBILITY"]},
+    },
+    "required": ["knack_record_id", "invoice_number", "parent_record_id", "knack_app"],
+}
