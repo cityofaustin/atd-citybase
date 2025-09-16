@@ -46,7 +46,7 @@ payment_reporting_schema = {
                 },
                 "associated_payments": {
                     "type": "array",
-                    "description": "An array containing other records associated with the payment. Ex. a refund record.",
+                    "description": "An array containing other records associated with the payment. Example: a refund record.",
                     "items": {
                         "type": "object",
                         "properties": {
@@ -73,7 +73,7 @@ payment_reporting_schema = {
                         "properties": {
                             "id": {
                                 "type": "string",
-                                "description": "The ID of the Line Item. Ex. The ID of a Permit being paid for.",
+                                "description": "The ID of the Line Item. Example: The ID of a Permit being paid for.",
                             },
                             "amount": {
                                 "type": "integer",
