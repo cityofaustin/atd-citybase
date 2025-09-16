@@ -61,38 +61,6 @@ payment_reporting_schema = {
                         },
                     },
                 },
-                "credit_card": {
-                    "type": ["object", "null"],
-                    "description": 'If payment_type is "credit_card" this object will contain card information. It will be null otherwise.',
-                    "properties": {
-                        "last_four": {
-                            "type": "string",
-                            "description": "The last four digits of the credit card number.",
-                        },
-                        "card_type": {
-                            "type": "string",
-                            "description": "The card type. Ex. visa, discover, etc.",
-                        },
-                    },
-                },
-                "bank_account": {
-                    "type": ["object", "null"],
-                    "description": 'If payment_type is "check" this object will contain bank account information. It will be null otherwise.',
-                    "properties": {
-                        "routing_number": {
-                            "type": "string",
-                            "description": "The bank account routing number.",
-                        },
-                        "bank_account_type": {
-                            "type": "string",
-                            "description": "The bank account type. Ex. checking",
-                        },
-                        "account_number_last_four": {
-                            "type": "string",
-                            "description": "The last four digits of the bank account number.",
-                        },
-                    },
-                },
                 "created_at": {
                     "type": "string",
                     "description": "When the payment was made. Timestamps are in UTC in ISO-8601 format.",
