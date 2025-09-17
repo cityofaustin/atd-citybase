@@ -3,11 +3,12 @@ import logging
 from flask import Flask, request, jsonify
 from watchtower import CloudWatchLogHandler
 import requests
-import json
 import os
+from jsonschema import validate, ValidationError
 
 from utils.field_maps import FIELD_MAPS
 from utils.headers import knack_headers
+from utils.schemas import payment_reporting_schema, custom_attributes_schema
 
 KNACK_API_URL = "https://api.knack.com/v1/objects/"
 
@@ -46,7 +47,7 @@ logging.getLogger().addHandler(log_handler)
 def unpack_custom_attributes(custom_attributes_list):
     """
     :param custom_attributes_list: list of dicts {"key":"key_name", "object":"value"} from citybase
-    :return: dictionary of "keyname":"value" pairs
+    :return: dictionary of "key_name":"value" pairs
     """
     custom_attributes = {}
     for a in custom_attributes_list:
@@ -223,9 +224,9 @@ def update_parent_reservation(
 @app.route("/")
 def index():
     now = datetime.now().isoformat()
-    app.logger.info(f"Healthcheck at {now}")
+    app.logger.info(f"Health check at {now}")
     payload = {
-        "message": "Austin Transportation Public Works Department Citybase healthcheck",
+        "message": "Austin Transportation Public Works Department Citybase health check",
         "status": "OK",
         "environment": flask_env,
         "timestamp": now,
@@ -244,12 +245,24 @@ def internal_server_error(e):
 def handle_postback():
     today_date = datetime.now().strftime("%m/%d/%Y %H:%M")
     citybase_data = request.get_json()
-    # TODO: validate citybase_data
     # information from citybase payload
     app.logger.info(f"New POST with payload: {citybase_data}")
+
+    try:
+        validate(citybase_data, payment_reporting_schema)
+    except ValidationError as e:
+        app.logger.error(f"Validation error: {e}")
+        return f"Validation error: {e.message}", 400
+
     custom_attributes = unpack_custom_attributes(
         citybase_data["data"]["custom_attributes"]
     )
+    try:
+        validate(custom_attributes, custom_attributes_schema)
+    except ValidationError as e:
+        app.logger.error(f"Custom attributes error: {e}")
+        return f"Malformed custom attributes: {e.message}", 400
+
     knack_record_id = custom_attributes.get("knack_record_id")
     knack_invoice = custom_attributes.get("invoice_number")
     knack_app = custom_attributes.get("knack_app")
@@ -261,7 +274,7 @@ def handle_postback():
     payment_amount = citybase_data["data"]["total_amount"]
     citybase_id = citybase_data["data"]["id"]
     app.logger.info(
-        f"Payment status: {payment_status}, invoice number: {knack_invoice}"
+        f"{citybase_id} - Payment status: {payment_status}, invoice number: {knack_invoice}"
     )
 
     headers = knack_headers(knack_app)
@@ -271,13 +284,15 @@ def handle_postback():
     message_payload = create_message_json(
         citybase_id, today_date, knack_invoice, payment_status, knack_app
     )
-    app.logger.info(f"Updating Knack messages table with payload: {message_payload}")
+    app.logger.info(
+        f"{citybase_id} - Updating Knack messages table with payload: {message_payload}"
+    )
     r = requests.post(
         f"{KNACK_API_URL}{messages_object_id}/records/",
         headers=headers,
         json=message_payload,
     )
-    app.logger.info(f"Response from updating messages table: {r}")
+    app.logger.info(f"{citybase_id} - Response from updating messages table: {r}")
     r.raise_for_status()
 
     # if a refund from Banners, post a new record to Street Banner knack transactions table
@@ -293,21 +308,23 @@ def handle_postback():
             knack_app,
         )
         app.logger.info(
-            f"Transaction is refund, creating new transaction record: {knack_payload}"
+            f"{citybase_id} - Transaction is refund, creating new transaction record: {knack_payload}"
         )
         knack_response = requests.post(
             f"{KNACK_API_URL}{transactions_object_id}/records/",
             headers=headers,
             json=knack_payload,
         )
-        app.logger.info(f"Refund transaction update response {knack_response}")
+        app.logger.info(
+            f"{citybase_id} - Refund transaction update response {knack_response}"
+        )
     # otherwise, update existing record payment status on transactions table
     else:
-        app.logger.info("Updating existing transaction record...")
+        app.logger.info(f"{citybase_id} - Updating existing transaction record")
         knack_payload = create_knack_payload(payment_status, today_date, knack_app)
         if payment_status == "successful":
             # if this was a successful payment we also need to update reservation record
-            app.logger.info("Updating parent reservation")
+            app.logger.info(f"{citybase_id} - Updating parent reservation")
             update_parent_reservation(
                 today_date, parent_record_id, banner_type, headers, knack_app
             )
@@ -317,12 +334,14 @@ def handle_postback():
             json=knack_payload,
         )
         app.logger.info(
-            f"Successful payment transaction update response {knack_response}"
+            f"{citybase_id} - Successful payment transaction update response {knack_response}"
         )
     if knack_response.status_code == 200:
         return "Payment status updated", knack_response.status_code
     # if unsuccessful, return knack's status response as response
-    app.logger.info(f"Payment transaction update response {knack_response}")
+    app.logger.info(
+        f"{citybase_id} - Payment transaction update response {knack_response}"
+    )
     return knack_response.text, knack_response.status_code
 
 
