@@ -2,6 +2,7 @@
 __pycache__/
 
 # Environments
+*.env
 .env
 .venv
 env/
@@ -11,3 +12,4 @@ venv/
 .idea/
 
 environment_variables.env
+.vscode
