@@ -9,7 +9,7 @@ Flask based endpoint ("the postback") used to update Knack transaction records b
 ## Integration with Knack
 
 Citybase is the payment provider for two Knack apps, Street Banners and Neighborhood Block Parties in Smart Mobility.
-Once a reservation is created and approved in the Knack app, an invoice is generated and marked as ready to pay. Custom javascript [example](https://github.com/cityofaustin/atd-knack/blob/master/code/street-banner/street-banner.js#L417) creates a payload to send to the [Citybase endpoint](https://invoice-service.prod.cityba.se/invoices/austin_tx_transportation/street_banner). This request responds with a url to process the payment request. Note, the amount must be in pennies.
+Once a reservation is created and approved in the Knack app, an invoice is generated and marked as ready to pay. Custom javascript ([example](https://github.com/cityofaustin/atd-knack/blob/master/code/street-banner/street-banner.js#L417)) creates a payload to send to the [Citybase endpoint](https://invoice-service.prod.cityba.se/invoices/austin_tx_transportation/street_banner). This request responds with a url to process the payment request. Note, the amount must be in pennies.
 
 Once a user has completed the payment transaction, Citybase sends a payload and waits for a 200 reply.
 
