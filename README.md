@@ -11,7 +11,7 @@ Flask based endpoint ("the postback") used to update Knack transaction records b
 Citybase is the payment provider for two Knack apps, Street Banners and Neighborhood Block Parties in Smart Mobility.
 Once a reservation is created and approved in the Knack app, an invoice is generated and marked as ready to pay. Custom javascript ([example](https://github.com/cityofaustin/atd-knack/blob/master/code/street-banner/street-banner.js#L417)) creates a payload to send to the [Citybase endpoint](https://invoice-service.prod.cityba.se/invoices/austin_tx_transportation/street_banner). This request responds with a url to process the payment request. Note, the amount must be in pennies.
 
-Once a user has completed the payment transaction, Citybase sends a payload and waits for a 200 reply.
+Once a user has completed the payment transaction, Citybase send a `POST` request with a payload and waits for a 200 reply.
 
 The postback inserts a record in the citybase_messages table in the appropriate Knack app.
 It then updates the transactions table, either by updating the status of the existing transaction or in the case of a refund, inserting a new record.
@@ -104,7 +104,7 @@ In the root of the git repository, please:
 
 Logs that are emitted are also sent to AWS Cloudwatch using [watchtower/](https://pypi.org/project/watchtower/), the log groups are named based on the environment variable used when spinning up the stack, `/dts/citybase/postback/{knack_env}`. Log streams are named based on the date in the YYYY/mm/dd format. Development logs have a 3 day retention rate, production and staging logs never expire.
 
-There is a Metric filter for the /dts/citybase/postback/production cloudwatch log so that if it finds a 500 in the log stream, it will send an email to [Chia](https://github.com/chiaberry)
+There is a Metric filter for the /dts/citybase/postback/production cloudwatch log so that if it finds a 500 in the log stream, it will send an email to [Chia](https://github.com/chiaberry).
 
 ## Deployment lifecycle
 
