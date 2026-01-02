@@ -106,6 +106,10 @@ Logs that are emitted are also sent to AWS Cloudwatch using [watchtower/](https:
 
 There is a Metric filter for the /dts/citybase/postback/production cloudwatch log so that if it finds a 500 in the log stream, it will send an email to [Chia](https://github.com/chiaberry).
 
+### SSL
+
+Certificate renewal is handled by certbot, see https://github.com/cityofaustin/dts-services-haproxy/tree/main/toolbox/certbot
+
 ## Deployment lifecycle
 
 This project moves through four phases: development → staging → UAT → production. The `main` branch is the integration branch and should always be the most up to date (ahead of `uat` and `production`). Feature work happens on short‑lived branches and is merged into `main` via pull request.
